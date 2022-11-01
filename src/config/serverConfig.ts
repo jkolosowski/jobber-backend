@@ -7,12 +7,13 @@ interface Database {
   port: string;
   username: string;
   password: string;
-  database: string;
 }
 
 interface Neo4jConfig extends Database {}
 
-interface MongoConfig extends Database {}
+interface MongoConfig extends Database {
+  database: string;
+}
 
 interface ServerConfig {
   port: string;
@@ -35,10 +36,9 @@ const serverConfig: ServerConfig = {
     },
     neo4jConfig: {
         host: process.env.NEO4J_HOST || 'localhost',
-        port: process.env.NEO4J_PORT || '5432',
+        port: process.env.NEO4J_PORT || '7687',
         username: process.env.NEO4J_USERNAME || 'neo4j',
         password: process.env.NEO4J_PASSWORD || 'password',
-        database: process.env.NEO4J_DATABASE || 'jobber',
     }
 }
 

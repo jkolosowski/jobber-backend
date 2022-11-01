@@ -9,3 +9,12 @@ services:
       MONGO_INITDB_DATABASE: jobber
     ports:
       - 27017:27017
+
+  neo4j:
+    image: neo4j:latest
+    restart: always
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      NEO4J_AUTH: neo4j/password

@@ -1,10 +1,8 @@
-interface User {
-    _id: string;
-    username: string;
-}
+import * as express from "express";
 
 declare namespace Express {
-    export interface Request {
-        user: User;
+    export interface User {
+        _id: string
+        email: string;
     }
 }

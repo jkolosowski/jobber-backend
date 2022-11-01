@@ -1,10 +1,12 @@
 import express, { Express } from "express";
-import serverConfig from "./src/config/serverConfig";
-import session from "./src/config/session";
 import cookieParser from "cookie-parser";
 import passport from "passport";
 import passportLocal from "passport-local";
-import User from "./src/models/User";
+
+import serverConfig from "./src/config/serverConfig";
+import session from "./src/config/session";
+import driver from "./src/config/neo4jDriver";
+import User, { usernameField } from "./src/models/User";
 import routes from "./src/routes/routes";
 
 const app: Express = express();
@@ -18,7 +20,7 @@ app.use(passport.session());
 passport.use(
   new passportLocal.Strategy(
     {
-      usernameField: "username",
+      usernameField: usernameField,
     },
     User.authenticate()
   )

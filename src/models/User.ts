@@ -3,7 +3,7 @@ import passportLocalMongoose from "passport-local-mongoose";
 
 const userSchema = new Schema({});
 
-const usernameField = "username";
+export const usernameField = "email";
 userSchema.plugin(passportLocalMongoose, {
   usernameField
 });
