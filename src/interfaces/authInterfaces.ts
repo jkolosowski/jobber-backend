@@ -4,5 +4,7 @@ export interface LoginReq {
 }
 
 export interface RegisterReq extends LoginReq {
+    firstName: string;
+    lastName: string;
     accountType: "Candidate" | "Recruiter";
 }
