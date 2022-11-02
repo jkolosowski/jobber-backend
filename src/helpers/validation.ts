@@ -1,55 +1,50 @@
 import Ajv, { ValidateFunction } from "ajv";
 
+import {
+  userFragileProps,
+  userBasicProps,
+  userAdditionalProps,
+  candidateOnlyProps,
+  recruiterOnlyProps,
+} from "./validationInterfaces";
+
 const ajv = new Ajv();
 
 const validate = <T>(data: T, validation: ValidateFunction) => {
-    const result = validation(data);
-    return [result, ajv.errorsText(validation.errors)]
+  const result = validation(data);
+  return [result, ajv.errorsText(validation.errors)];
 };
 
 export const validateRegisterFields = ajv.compile({
   properties: {
-    email: {
-      type: "string",
-    },
-    password: {
-      type: "string",
-    },
-    accountType: {
-      type: "string",
-      pattern: "^(Candidate|Recruiter)$",
-    },
-    firstName: {
-      type: "string",
-    },
-    lastName: {
-      type: "string",
-    },
-    phoneNumber: {
-      type: "string",
-    },
-    country: {
-      type: "string",
-    },
-    linkedin: {
-      type: "string",
-    },
-    avatar: {
-      type: "string",
-    },
-    portfolio: {
-      type: "string",
-    },
-    bio: {
-      type: "string",
-    },
-    company: {
-      type: "string",
-    },
+    ...userFragileProps,
+    ...userBasicProps,
   },
-  required: ["email", "password", "accountType", "firstName", "lastName", "phoneNumber", "country", "linkedin", "avatar"],
+  required: ["email", "password", "accountType", "firstName", "lastName"],
   type: "object",
-  additionalProperties: true,
+  additionalProperties: false,
+});
+
+export const validateRecruiterFields = ajv.compile({
+  properties: {
+    ...userBasicProps,
+    ...userAdditionalProps,
+    ...recruiterOnlyProps,
+  },
+  required: ["firstName", "lastName", "email", "phoneNumber", "country"],
+  type: "object",
+  additionalProperties: false,
+});
+
+export const validateCandidateFields = ajv.compile({
+  properties: {
+    ...userBasicProps,
+    ...userAdditionalProps,
+    ...candidateOnlyProps,
+  },
+  required: ["firstName", "lastName", "email", "phoneNumber", "country"],
+  type: "object",
+  additionalProperties: false,
 });
 
 export default validate;

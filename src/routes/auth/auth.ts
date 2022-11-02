@@ -1,36 +1,26 @@
 import passport from "passport";
 import { Router } from "express";
 
-import User from "../models/User";
-import { RegisterReq } from "../interfaces/authInterfaces";
-import {
-  User as UserInt,
-  CandidateProps,
-  RecruiterProps,
-} from "../interfaces/userInterfaces";
-import { neo4jWrapper } from "../config/neo4jDriver";
-import validate, { validateRegisterFields } from "../helpers/validation";
+import User from "../../models/User";
+import { RegisterReq } from "../../interfaces/authInterfaces";
+import { neo4jWrapper } from "../../config/neo4jDriver";
+import validate, { validateRegisterFields } from "../../helpers/validation";
 
 const router = Router();
 
 router.post("/register", (req, res) => {
-  const [vRes, vErrors] = validate<RegisterReq & CandidateProps & RecruiterProps & Omit<UserInt, "id">>(req.body, validateRegisterFields);
+  const [vRes, vErrors] = validate<RegisterReq>(
+    req.body,
+    validateRegisterFields
+  );
   if (!vRes) {
     return res.status(400).json({
       message: vErrors,
     });
   }
 
-  const { email, password, accountType }: RegisterReq = req.body;
-  const {
-    firstName,
-    lastName,
-    phoneNumber,
-    country,
-    linkedin,
-    avatar,
-  }: Omit<UserInt, "id" | "email"> = req.body;
-  const { portfolio, bio, company }: CandidateProps & RecruiterProps = req.body;
+  const { email, password, accountType, firstName, lastName }: RegisterReq =
+    req.body;
 
   User.register({ email }, password, async (err, user) => {
     if (err) {
@@ -40,39 +30,26 @@ router.post("/register", (req, res) => {
     }
 
     const userId = user?._id.toString();
-    const userTypedProps =
-      accountType === "Candidate" ? ["portfolio", "bio"] : ["company"];
-    const queryProps = userTypedProps
-      .map((key) => `${key}: $${key}`)
-      .join(", ");
 
     try {
       await neo4jWrapper(
         `MERGE (u:User:${accountType} {
-        id: randomUUID(),
-        mongoUserId: $mongoUserId,
+        id: $userId,
         email: $email,
         firstName: $firstName,
-        lastName: $lastName,
-        phoneNumber: $phoneNumber,
-        country: $country,
-        linkedin: $linkedin,
-        avatar: $avatar,
-        ${queryProps}})`,
+        lastName: $lastName}) RETURN u.id`,
         {
           email,
           firstName,
           lastName,
-          phoneNumber,
-          country,
-          linkedin,
-          avatar,
-          bio: bio || "",
-          portfolio: portfolio || "",
-          company: company || "",
-          mongoUserId: userId,
+          userId,
         }
       );
+
+      return res.status(201).json({
+        massage: "Succesfully created an account!",
+        id: userId
+      });
     } catch (err) {
       await User.findByIdAndDelete(userId);
 
@@ -80,11 +57,6 @@ router.post("/register", (req, res) => {
         message: err,
       });
     }
-
-    return res.status(201).json({
-      massage: "Succesfully created an account!",
-      id: userId,
-    });
   });
 });
 
