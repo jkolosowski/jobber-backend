@@ -11,7 +11,7 @@ router.patch("/:id", async (req, res) => {
   const recruiterData: Recruiter = req.body;
   const [vRes, vErrors] = validate<Recruiter>(
     recruiterData,
-    validateRecruiterFields
+    validateRecruiterFields,
   );
 
   if (!vRes) {
@@ -38,7 +38,7 @@ router.patch("/:id", async (req, res) => {
   try {
     await neo4jWrapper(
       `MATCH (r:Recruiter {id: $id}) SET r += {${queryProps}}`,
-      { ...recruiterData, id }
+      { ...recruiterData, id },
     );
   } catch (err) {
     await User.findByIdAndUpdate(id, { $set: { email: previousEmail } });

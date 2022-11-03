@@ -5,7 +5,7 @@ const userSchema = new Schema({});
 
 export const usernameField = "email";
 userSchema.plugin(passportLocalMongoose, {
-  usernameField
+  usernameField,
 });
 userSchema.path(usernameField);
 

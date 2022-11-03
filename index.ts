@@ -22,8 +22,8 @@ passport.use(
     {
       usernameField: usernameField,
     },
-    User.authenticate()
-  )
+    User.authenticate(),
+  ),
 );
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
@@ -32,6 +32,6 @@ app.use(routes);
 
 app.listen(serverConfig.port, () => {
   console.log(
-    `⚡️[server]: Server is running at ${serverConfig.protocol}://localhost:${serverConfig.port}`
+    `⚡️[server]: Server is running at ${serverConfig.protocol}://localhost:${serverConfig.port}`,
   );
 });

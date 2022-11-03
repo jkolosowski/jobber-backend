@@ -6,7 +6,7 @@ const { host, username, password, port } = serverConfig.neo4jConfig;
 
 const driver = neo4j.driver(
   `bolt://${host}:${port}`,
-  neo4j.auth.basic(username, password)
+  neo4j.auth.basic(username, password),
 );
 
 export const verify = () => {
@@ -22,10 +22,7 @@ export const verify = () => {
 };
 verify();
 
-export const neo4jWrapper = async (
-  query: string,
-  parameters: object
-) => {
+export const neo4jWrapper = async (query: string, parameters: object) => {
   const session = driver.session();
   try {
     return await session.run(query, parameters);
