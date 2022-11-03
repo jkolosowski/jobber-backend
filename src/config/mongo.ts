@@ -11,7 +11,7 @@ const mongoHost = `mongodb://${host}:${port}`;
 mongoose.connect(mongoHost, {
   user: username,
   pass: password,
-  dbName: database
+  dbName: database,
 });
 
 mongoose.connection

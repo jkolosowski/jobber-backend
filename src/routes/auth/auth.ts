@@ -11,7 +11,7 @@ const router = Router();
 router.post("/register", (req, res) => {
   const [vRes, vErrors] = validate<RegisterReq>(
     req.body,
-    validateRegisterFields
+    validateRegisterFields,
   );
   if (!vRes) {
     return res.status(400).json({
@@ -43,12 +43,12 @@ router.post("/register", (req, res) => {
           firstName,
           lastName,
           userId,
-        }
+        },
       );
 
       return res.status(201).json({
         massage: "Succesfully created an account!",
-        id: userId
+        id: userId,
       });
     } catch (err) {
       await User.findByIdAndDelete(userId);
@@ -92,7 +92,7 @@ router.post("/logout", (req, res) => {
         res.clearCookie("connect.sid");
         res.status(200).json({ message: "Success!" });
       });
-    }
+    },
   );
 });
 
