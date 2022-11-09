@@ -2,7 +2,7 @@ import passport from "passport";
 import { Router } from "express";
 
 import User from "../../models/User";
-import { RegisterReq } from "../../interfaces/authInterfaces";
+import { RegisterReq } from "../../interfaces/auth";
 import { neo4jWrapper } from "../../config/neo4jDriver";
 import validate, { validateRegisterFields } from "../../helpers/validation";
 

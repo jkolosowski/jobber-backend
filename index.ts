@@ -1,17 +1,20 @@
-import express, { Express } from "express";
 import cookieParser from "cookie-parser";
+import cors from "cors";
+import express, { Express } from "express";
 import passport from "passport";
 import passportLocal from "passport-local";
 
+import corsConfig from "./src/config/cors";
+import driver from "./src/config/neo4jDriver";
+import routes from "./src/routes/routes";
 import serverConfig from "./src/config/serverConfig";
 import session from "./src/config/session";
-import driver from "./src/config/neo4jDriver";
 import User, { usernameField } from "./src/models/User";
-import routes from "./src/routes/routes";
 
 const app: Express = express();
 app.use(express.json());
 app.use(cookieParser());
+app.use(cors(corsConfig));
 
 app.use(session);
 app.use(passport.initialize());
