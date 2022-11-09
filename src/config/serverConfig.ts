@@ -1,31 +1,13 @@
 import dotenv from "dotenv";
 
+import { ServerConfig } from "../interfaces/serverConfig";
+
 dotenv.config();
-
-interface Database {
-  host: string;
-  port: string;
-  username: string;
-  password: string;
-}
-
-interface Neo4jConfig extends Database {}
-
-interface MongoConfig extends Database {
-  database: string;
-}
-
-interface ServerConfig {
-  port: string;
-  protocol: "http" | "https";
-  secret: string;
-  mongoConfig: MongoConfig;
-  neo4jConfig: Neo4jConfig;
-}
 
 const serverConfig: ServerConfig = {
   protocol: process.env.PROTOCOL === "https" ? "https" : "http",
   port: process.env.PORT || "5000",
+  appPort: process.env.APP_PORT || "3000",
   secret: process.env.EXPRESS_SESSION_SECRET || "jobber",
   mongoConfig: {
     host: process.env.MONGO_HOST || "localhost",

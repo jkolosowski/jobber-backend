@@ -1,7 +1,7 @@
 import { Router } from "express";
 
 import validate, { validateCandidateFields } from "../../helpers/validation";
-import { Candidate } from "../../interfaces/userInterfaces";
+import { Candidate } from "../../interfaces/user";
 import { neo4jWrapper } from "../../config/neo4jDriver";
 import User from "../../models/User";
 
