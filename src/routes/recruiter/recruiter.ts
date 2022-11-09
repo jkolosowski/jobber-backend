@@ -7,7 +7,26 @@ import User from "../../models/User";
 
 const router = Router();
 
+/**
+ * @PATCH
+ * Modify recruiter account information.
+ * 
+ * @path /recruiter/:id
+ * @pathParam id: string            Id of a user.
+ * 
+ * @contentType application/json
+ * 
+ * @reqParam email: string          User email.
+ * @reqParam firstName: string      First name.
+ * @reqParam lastName: string       Last name.
+ * @reqParam phoneNumber: string    Phone number.
+ * @reqParam country: string        Home country.
+ * @reqParam compant: string        The company for which the recruiter works.
+ * 
+ * @resParam message: string        Response message.
+ */
 router.patch("/:id", async (req, res) => {
+  //TODO: Check credentials (authorize and check if user id is equal to request id)
   const recruiterData: Recruiter = req.body;
   const [vRes, vErrors] = validate<Recruiter>(
     recruiterData,

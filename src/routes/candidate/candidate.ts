@@ -7,7 +7,27 @@ import User from "../../models/User";
 
 const router = Router();
 
+/**
+ * @PATCH
+ * Modify candidate account information.
+ * 
+ * @path /candidate/:id
+ * @pathParam id: string            Id of a user.
+ * 
+ * @contentType application/json
+ * 
+ * @reqParam email: string          User email.
+ * @reqParam firstName: string      First name.
+ * @reqParam lastName: string       Last name.
+ * @reqParam phoneNumber: string    Phone number.
+ * @reqParam country: string        Home country.
+ * @reqParam portfolio: string      Portfolio of a candidate.
+ * @reqParam bio: string            Short description about candidate.
+ * 
+ * @resParam message: string        Response message.
+ */
 router.patch("/:id", async (req, res) => {
+  //TODO: Check credentials (authorize and check if user id is equal to request id)
   const candidateData: Candidate = req.body;
   const [vRes, vErrors] = validate<Candidate>(
     candidateData,

@@ -8,6 +8,23 @@ import validate, { validateRegisterFields } from "../../helpers/validation";
 
 const router = Router();
 
+/**
+ * @POST
+ * Registers a new user.
+ *
+ * @path /register
+ *
+ * @contentType application/json
+ *
+ * @reqParam email: string                            Unique email.
+ * @reqParam password: string                         Password.
+ * @reqParam accountType: "Candidate" | "Recruiter"   Account type.
+ * @reqParam firstName: string                        First name.
+ * @reqParam lastName: string                         Last name.
+ *
+ * @resParam message: string                          Response message.
+ * @resParam userId: string                           Id of the registered user.
+ */
 router.post("/register", (req, res) => {
   const [vRes, vErrors] = validate<RegisterReq>(
     req.body,
@@ -60,6 +77,19 @@ router.post("/register", (req, res) => {
   });
 });
 
+/**
+ * @POST
+ * Logs in as a given user.
+ *
+ * @path /login
+ *
+ * @contentType application/json
+ *
+ * @reqParam email: string      User email.
+ * @reqParam password: string   User password.
+ * 
+ * @resParam message: string    Response message.
+ */
 router.post("/login", (req, res) => {
   passport.authenticate("local", (err, user) => {
     if (err) {
@@ -78,6 +108,14 @@ router.post("/login", (req, res) => {
   })(req, res);
 });
 
+/**
+ * @POST
+ * Logs out from current user account.
+ *
+ * @path /logout
+ *
+ * @resParam message: string  Response message.
+ */
 router.post("/logout", (req, res) => {
   req.logout(
     {
@@ -96,6 +134,14 @@ router.post("/logout", (req, res) => {
   );
 });
 
+/**
+ * @GET
+ * Returns a message whether a user is logged in or not.
+ * 
+ * @path /status
+ * 
+ * @resParam message: string  Response message.
+ */
 router.get("/status", (req, res) => {
   return res.status(200).json({
     message: req.user ? `Logged in as ${req.user.email}` : `Not logged in!`,
