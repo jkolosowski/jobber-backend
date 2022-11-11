@@ -1,5 +1,5 @@
 import passport from "passport";
-import { Router } from "express";
+import { Router, Request, Response } from "express";
 
 import User from "../../models/User";
 import { RegisterReq } from "../../interfaces/auth";
@@ -25,7 +25,7 @@ const router = Router();
  * @resParam message: string                          Response message.
  * @resParam userId: string                           Id of the registered user.
  */
-router.post("/register", (req, res) => {
+router.post("/register", (req: Request, res: Response) => {
   const [vRes, vErrors] = validate<RegisterReq>(
     req.body,
     validateRegisterFields,
@@ -87,10 +87,10 @@ router.post("/register", (req, res) => {
  *
  * @reqParam email: string      User email.
  * @reqParam password: string   User password.
- * 
+ *
  * @resParam message: string    Response message.
  */
-router.post("/login", (req, res) => {
+router.post("/login", (req: Request, res: Response) => {
   passport.authenticate("local", (err, user) => {
     if (err) {
       return res.status(500).json({ message: err });
@@ -116,7 +116,7 @@ router.post("/login", (req, res) => {
  *
  * @resParam message: string  Response message.
  */
-router.post("/logout", (req, res) => {
+router.post("/logout", (req: Request, res: Response) => {
   req.logout(
     {
       keepSessionInfo: false,
@@ -137,12 +137,12 @@ router.post("/logout", (req, res) => {
 /**
  * @GET
  * Returns a message whether a user is logged in or not.
- * 
+ *
  * @path /status
- * 
+ *
  * @resParam message: string  Response message.
  */
-router.get("/status", (req, res) => {
+router.get("/status", (req: Request, res: Response) => {
   return res.status(200).json({
     message: req.user ? `Logged in as ${req.user.email}` : `Not logged in!`,
   });
