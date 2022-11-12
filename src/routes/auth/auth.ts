@@ -16,16 +16,21 @@ const router = Router();
  *
  * @contentType application/json
  *
- * @reqParam email: string                            Unique email.
- * @reqParam password: string                         Password.
- * @reqParam accountType: "Candidate" | "Recruiter"   Account type.
- * @reqParam firstName: string                        First name.
- * @reqParam lastName: string                         Last name.
+ * @reqParam email: string                          Unique email.
+ * @reqParam password: string                       Password.
+ * @reqParam accountType: "Candidate" | "Recruiter" Account type.
+ * @reqParam firstName: string                      First name.
+ * @reqParam lastName: string                       Last name.
  *
- * @resParam message: string                          Response message.
- * @resParam userId: string                           Id of the registered user.
+ * @resParam message: string                        Response message.
+ * @resParam user: object                           Registered user's information.
+ * @resParam user.id: string                        Registered user's ID (UUIDv4 standard).
+ * @resParam user.email: string                     Registered user's email.
+ * @resParam user.firstName: string                 Registered user's first name.
+ * @resParam user.lastName: string                  Registered user's last name.
+ * @resParam user.accountType: string               Registered user's account type.
  */
-router.post("/register", (req: Request, res: Response) => {
+router.post("/register", async (req: Request, res: Response) => {
   const [vRes, vErrors] = validate<RegisterReq>(
     req.body,
     validateRegisterFields,
@@ -39,42 +44,51 @@ router.post("/register", (req: Request, res: Response) => {
   const { email, password, accountType, firstName, lastName }: RegisterReq =
     req.body;
 
-  User.register({ email }, password, async (err, user) => {
-    if (err) {
-      return res.status(500).json({
-        message: err,
-      });
-    }
+  return User.register(
+    { email, accountType },
+    password,
+    async (err, user: Express.AuthenticatedUser) => {
+      if (err) {
+        return res.status(500).json({
+          message: err,
+        });
+      }
 
-    const userId = user?._id.toString();
+      const _id = user?._id.toString();
 
-    try {
-      await neo4jWrapper(
-        `MERGE (u:User:${accountType} {
-        id: $userId,
+      try {
+        const user = await neo4jWrapper(
+          `MERGE (u:User:${accountType} {
+        id: randomUUID(),
+        _id: $_id,
         email: $email,
         firstName: $firstName,
         lastName: $lastName}) RETURN u.id`,
-        {
+          {
+            _id,
+            email,
+            firstName,
+            lastName,
+          },
+        );
+
+        return res.status(201).json({
+          massage: "Succesfully created an account!",
+          id: user.records[0]?.get("u.id"),
           email,
           firstName,
           lastName,
-          userId,
-        },
-      );
+          accountType,
+        });
+      } catch (err) {
+        await User.findByIdAndDelete(_id);
 
-      return res.status(201).json({
-        massage: "Succesfully created an account!",
-        id: userId,
-      });
-    } catch (err) {
-      await User.findByIdAndDelete(userId);
-
-      return res.status(500).json({
-        message: err,
-      });
-    }
-  });
+        return res.status(500).json({
+          message: err,
+        });
+      }
+    },
+  );
 });
 
 /**
@@ -85,25 +99,51 @@ router.post("/register", (req: Request, res: Response) => {
  *
  * @contentType application/json
  *
- * @reqParam email: string      User email.
- * @reqParam password: string   User password.
+ * @reqParam email: string            User email.
+ * @reqParam password: string         User password.
  *
- * @resParam message: string    Response message.
+ * @resParam message: string          Response message.
+ * @resParam user: object             User information.
+ * @resParam user.id: string          User ID (UUIDv4 standard).
+ * @resParam user.email: string       User email.
+ * @resParam user.firstName: string   User first name.
+ * @resParam user.lastName: string    User last name.
+ * @resParam user.accountType: string User account type.
  */
 router.post("/login", (req: Request, res: Response) => {
-  passport.authenticate("local", (err, user) => {
+  passport.authenticate("local", (err, user: Express.AuthenticatedUser) => {
     if (err) {
       return res.status(500).json({ message: err });
     } else if (!user) {
       return res.status(401).json({ message: "Bad credentials!" });
     }
 
-    req.login(user, (err) => {
+    return req.login(user, async (err) => {
       if (err) {
         return res.status(500).json({ message: err });
       }
 
-      return res.status(201).json({ message: "Success!" });
+      const accountType: string = user.accountType;
+      const _id: string = user._id.toString();
+      const userData = await neo4jWrapper(
+        `MATCH (u:${accountType} {_id: $_id}) RETURN u`,
+        { _id },
+      );
+
+      const tempObject: { [key: string]: any } = { accountType };
+      const userResult = Object.entries<any>(
+        userData.records[0].get("u").properties,
+      ).reduce((currVal, [key, value]) => {
+        if (key === "_id") {
+          return currVal;
+        }
+
+        currVal[key] = value;
+
+        return { ...currVal };
+      }, tempObject);
+
+      return res.status(201).json({ message: "Success!", user: userResult });
     });
   })(req, res);
 });
@@ -114,7 +154,7 @@ router.post("/login", (req: Request, res: Response) => {
  *
  * @path /logout
  *
- * @resParam message: string  Response message.
+ * @resParam message: string Response message.
  */
 router.post("/logout", (req: Request, res: Response) => {
   req.logout(
@@ -126,7 +166,7 @@ router.post("/logout", (req: Request, res: Response) => {
         return res.status(500).json({ message: err });
       }
 
-      req.session.destroy(() => {
+      return req.session.destroy(() => {
         res.clearCookie("connect.sid");
         res.status(200).json({ message: "Success!" });
       });
@@ -140,7 +180,7 @@ router.post("/logout", (req: Request, res: Response) => {
  *
  * @path /status
  *
- * @resParam message: string  Response message.
+ * @resParam message: string Response message.
  */
 router.get("/status", (req: Request, res: Response) => {
   return res.status(200).json({

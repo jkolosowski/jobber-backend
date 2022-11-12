@@ -1,5 +1,5 @@
 import serverConfig from "./serverConfig";
-import mongoose, { ConnectOptions } from "mongoose";
+import mongoose from "mongoose";
 
 const username = serverConfig.mongoConfig.username;
 const password = serverConfig.mongoConfig.password;

@@ -1,7 +1,6 @@
-export interface User {
-  email: string;
-  firstName: string;
-  lastName: string;
+import { Email, FirstName, LastName } from "./primitive";
+
+export interface User extends Email, FirstName, LastName {
   phoneNumber: string;
   country: string;
   linkedin: string;
