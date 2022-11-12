@@ -40,11 +40,11 @@ router.patch("/", async (req: Request, res: Response) => {
     });
   }
 
-  const id = req?.user?._id.toString();
+  const _id = req?.user?._id.toString();
   const previousEmail = req?.user?.email;
 
   try {
-    await User.findByIdAndUpdate(id, { $set: { email: recruiterData.email } });
+    await User.findByIdAndUpdate(_id, { $set: { email: recruiterData.email } });
   } catch (err) {
     return res.status(500).json({ message: err });
   }
@@ -55,11 +55,11 @@ router.patch("/", async (req: Request, res: Response) => {
 
   try {
     await neo4jWrapper(
-      `MATCH (r:Recruiter {id: $id}) SET r += {${queryProps}}`,
-      { ...recruiterData, id },
+      `MATCH (r:Recruiter {_id: $_id}) SET r += {${queryProps}}`,
+      { ...recruiterData, _id },
     );
   } catch (err) {
-    await User.findByIdAndUpdate(id, { $set: { email: previousEmail } });
+    await User.findByIdAndUpdate(_id, { $set: { email: previousEmail } });
     return res.status(500).json({ message: err });
   }
 
