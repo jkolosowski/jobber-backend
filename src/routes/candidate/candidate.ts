@@ -1,4 +1,4 @@
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 
 import validate, { validateCandidateFields } from "../../helpers/validation";
 import { Candidate } from "../../interfaces/user";
@@ -11,7 +11,7 @@ const router = Router();
  * @PATCH
  * Modify candidate account information.
  *
- * @path /candidate/:id
+ * @path /candidate
  * @pathParam id: string            Id of a user.
  *
  * @contentType application/json

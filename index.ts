@@ -5,8 +5,7 @@ import passport from "passport";
 import passportLocal from "passport-local";
 
 import corsConfig from "./src/config/cors";
-import driver from "./src/config/neo4jDriver";
-import routes from "./src/routes/router";
+import routes from "./src/routes/routes";
 import serverConfig from "./src/config/serverConfig";
 import session from "./src/config/session";
 import User, { usernameField } from "./src/models/User";
