@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Request, Response } from "express";
 
 import validate, { validateCandidateFields } from "../../helpers/validation";
 import { Candidate } from "../../interfaces/user";
@@ -10,12 +10,12 @@ const router = Router();
 /**
  * @PATCH
  * Modify candidate account information.
- * 
+ *
  * @path /candidate/:id
  * @pathParam id: string            Id of a user.
- * 
+ *
  * @contentType application/json
- * 
+ *
  * @reqParam email: string          User email.
  * @reqParam firstName: string      First name.
  * @reqParam lastName: string       Last name.
@@ -23,11 +23,12 @@ const router = Router();
  * @reqParam country: string        Home country.
  * @reqParam portfolio: string      Portfolio of a candidate.
  * @reqParam bio: string            Short description about candidate.
- * 
+ *
  * @resParam message: string        Response message.
  */
-router.patch("/:id", async (req, res) => {
-  //TODO: Check credentials (authorize and check if user id is equal to request id)
+router.patch("/", async (req: Request, res: Response) => {
+  //TODO: Check credentials (check if user id is equal to request id)
+
   const candidateData: Candidate = req.body;
   const [vRes, vErrors] = validate<Candidate>(
     candidateData,
@@ -40,12 +41,10 @@ router.patch("/:id", async (req, res) => {
     });
   }
 
-  const id = req.params.id;
-  let previousEmail = "";
+  const id = req?.user?._id.toString();
+  const previousEmail = req?.user?.email;
 
   try {
-    const user: { _id: string; email: string } = await User.findById(id).exec();
-    previousEmail = user?.email;
     await User.findByIdAndUpdate(id, { $set: { email: candidateData.email } });
   } catch (err) {
     return res.status(500).json({ message: err });
@@ -57,7 +56,7 @@ router.patch("/:id", async (req, res) => {
 
   try {
     await neo4jWrapper(
-      `MATCH (r:Recruiter {id: $id}) SET r += {${queryProps}}`,
+      `MATCH (r:Candidate {id: $id}) SET r += {${queryProps}}`,
       { ...candidateData, id },
     );
   } catch (err) {
