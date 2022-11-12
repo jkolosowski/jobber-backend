@@ -1,7 +1,15 @@
-import { Schema, model } from "../config/mongo";
 import passportLocalMongoose from "passport-local-mongoose";
 
-const userSchema = new Schema({});
+import { UserDocument } from "../interfaces/userDocument";
+import { Schema, model } from "../config/mongo";
+
+const userSchema = new Schema<UserDocument>({
+  accountType: {
+    type: String,
+    enum: ["Candidate", "Recruiter"],
+    default: "Candidate",
+  },
+});
 
 export const usernameField = "email";
 userSchema.plugin(passportLocalMongoose, {
@@ -9,4 +17,4 @@ userSchema.plugin(passportLocalMongoose, {
 });
 userSchema.path(usernameField);
 
-export default model("User", userSchema);
+export default model<UserDocument>("User", userSchema);

@@ -21,7 +21,7 @@ router.use(
   recruiter,
 );
 
-router.use((req: Request, res: Response) => {
+router.use((_req: Request, res: Response) => {
   res.status(404).json({ message: "Route not found!" });
 });
 
