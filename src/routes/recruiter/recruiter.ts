@@ -11,7 +11,7 @@ const router = Router();
  * @PATCH
  * Modify recruiter account information.
  *
- * @path /recruiter/:id
+ * @path /recruiter
  * @pathParam id: string            Id of a user.
  *
  * @contentType application/json
