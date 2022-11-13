@@ -125,6 +125,7 @@ router.post("/login", (req: Request, res: Response) => {
 
       const accountType: string = user.accountType;
       const _id: string = user._id.toString();
+
       const userData = await neo4jWrapper(
         `MATCH (u:${accountType} {_id: $_id}) RETURN u`,
         { _id },

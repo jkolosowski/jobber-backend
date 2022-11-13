@@ -6,6 +6,7 @@ import {
   userAdditionalProps,
   candidateOnlyProps,
   recruiterOnlyProps,
+  offerProps,
 } from "./validationInterfaces";
 
 const ajv = new Ajv();
@@ -43,6 +44,15 @@ export const validateCandidateFields = ajv.compile({
     ...candidateOnlyProps,
   },
   required: ["firstName", "lastName", "email", "phoneNumber", "country"],
+  type: "object",
+  additionalProperties: false,
+});
+
+export const validateOfferFields = ajv.compile({
+  properties: {
+    ...offerProps,
+  },
+  required: ["title", "companyName", "location", "experience", "description"],
   type: "object",
   additionalProperties: false,
 });
