@@ -12,7 +12,6 @@ const router = Router();
  * Modify candidate account information.
  *
  * @path /candidate
- * @pathParam id: string            Id of a user.
  *
  * @contentType application/json
  *

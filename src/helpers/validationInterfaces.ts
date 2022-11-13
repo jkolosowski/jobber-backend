@@ -48,3 +48,33 @@ export const recruiterOnlyProps = {
     type: "string",
   },
 };
+
+export const offerProps = {
+  title: {
+    type: "string",
+  },
+  companyName: {
+    type: "string",
+  },
+  location: {
+    type: "string",
+  },
+  experience: {
+    type: "number",
+  },
+  bottomPayrange: {
+    type: "number",
+  },
+  topPayrange: {
+    type: "number",
+  },
+  currency: {
+    type: "string",
+  },
+  description: {
+    type: "string",
+  },
+  status: {
+    type: "string",
+  },
+};

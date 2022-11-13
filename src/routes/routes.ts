@@ -4,6 +4,7 @@ import authenticationCheck, { accountTypeCheck } from "../config/middlewares";
 import auth from "./auth/auth";
 import candidate from "./candidate/candidate";
 import recruiter from "./recruiter/recruiter";
+import offer from "./offer/offer";
 
 const router = Router();
 
@@ -20,6 +21,7 @@ router.use(
   accountTypeCheck("Recruiter"),
   recruiter,
 );
+router.use("/offer", authenticationCheck, offer);
 
 router.use((_req: Request, res: Response) => {
   res.status(404).json({ message: "Route not found!" });
