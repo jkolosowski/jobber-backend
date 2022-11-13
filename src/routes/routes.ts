@@ -5,6 +5,7 @@ import auth from "./auth/auth";
 import candidate from "./candidate/candidate";
 import recruiter from "./recruiter/recruiter";
 import offer from "./offer/offer";
+import user from "./user/user";
 
 const router = Router();
 
@@ -22,6 +23,7 @@ router.use(
   recruiter,
 );
 router.use("/offer", authenticationCheck, offer);
+router.use("/user", authenticationCheck, user);
 
 router.use((_req: Request, res: Response) => {
   res.status(404).json({ message: "Route not found!" });
