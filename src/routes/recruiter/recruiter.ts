@@ -1,14 +1,15 @@
 import { Router, Request, Response } from "express";
 
-import validate, {
+import {
   validateOfferFields,
   validateRecruiterFields,
-} from "../../helpers/validation";
+} from "../../helpers/validation/validation";
 import { Recruiter } from "../../interfaces/user";
 import { neo4jWrapper } from "../../config/neo4jDriver";
 import User from "../../models/User";
 import { Offer } from "../../interfaces/offer";
 import { getQueryProps } from "../../helpers/query";
+import { validateRequestBody } from "../../config/middlewares";
 
 const router = Router();
 
@@ -29,44 +30,40 @@ const router = Router();
  *
  * @resParam message: string        Response message.
  */
-router.patch("/", async (req: Request, res: Response) => {
-  //TODO: Check credentials (check if user id is equal to request id)
+router.patch(
+  "/",
+  validateRequestBody<Recruiter>(validateRecruiterFields),
+  async (req: Request, res: Response) => {
+    const recruiterData: Recruiter = req.body;
 
-  const recruiterData: Recruiter = req.body;
-  const [vRes, vErrors] = validate<Recruiter>(
-    recruiterData,
-    validateRecruiterFields,
-  );
+    const _id = req?.user?._id.toString();
+    const previousEmail = req?.user?.email;
 
-  if (!vRes) {
-    return res.status(400).json({
-      message: vErrors,
-    });
-  }
+    try {
+      await User.findByIdAndUpdate(_id, {
+        $set: { email: recruiterData.email },
+      });
+    } catch (err) {
+      return res.status(500).json({ message: err });
+    }
 
-  const _id = req?.user?._id.toString();
-  const previousEmail = req?.user?.email;
+    const queryProps = Object.keys(recruiterData)
+      .map((key) => `${key}: $${key}`)
+      .join(", ");
 
-  try {
-    await User.findByIdAndUpdate(_id, { $set: { email: recruiterData.email } });
-  } catch (err) {
-    return res.status(500).json({ message: err });
-  }
+    try {
+      await neo4jWrapper(
+        `MATCH (r:Recruiter {_id: $_id}) SET r += {${queryProps}}`,
+        { ...recruiterData, _id },
+      );
+    } catch (err) {
+      await User.findByIdAndUpdate(_id, { $set: { email: previousEmail } });
+      return res.status(500).json({ message: err });
+    }
 
-  const queryProps = getQueryProps(recruiterData);
-
-  try {
-    await neo4jWrapper(
-      `MATCH (r:Recruiter {_id: $_id}) SET r += {${queryProps}}`,
-      { ...recruiterData, _id },
-    );
-  } catch (err) {
-    await User.findByIdAndUpdate(_id, { $set: { email: previousEmail } });
-    return res.status(500).json({ message: err });
-  }
-
-  return res.status(200).json({ message: "Success!" });
-});
+    return res.status(200).json({ message: "Success!" });
+  },
+);
 
 /**
  * @POST
@@ -89,35 +86,31 @@ router.patch("/", async (req: Request, res: Response) => {
  * @resParam offer: Offer        Response offer object.
  *
  */
-router.post("/offer", async (req: Request, res: Response) => {
-  const offerData: Offer = req.body;
-  offerData.status = "open";
-  const [vRes, vErrors] = validate<Offer>(offerData, validateOfferFields);
+router.post(
+  "/offer",
+  validateRequestBody<Offer>(validateOfferFields),
+  async (req: Request, res: Response) => {
+    const offerData: Offer = req.body;
+    offerData.status = "open";
+    const _id = req?.user?._id.toString();
+    const queryProps = getQueryProps(offerData);
 
-  if (!vRes) {
-    return res.status(400).json({
-      message: vErrors,
-    });
-  }
-
-  const _id = req?.user?._id.toString();
-  const queryProps = getQueryProps(offerData);
-
-  try {
-    const records = await neo4jWrapper(
-      `MATCH (r:Recruiter {_id: $_id})
+    try {
+      const records = await neo4jWrapper(
+        `MATCH (r:Recruiter {_id: $_id})
       CREATE (o:Offer {${queryProps}, id:randomUUID()})
       MERGE (r)-[:CREATE_OFFER]->(o)
       RETURN o
       `,
-      { ...offerData, _id },
-    );
-    const offer: Offer = records.records[0].get("o").properties;
-    return res.status(200).json({ message: "Success!", offer: offer });
-  } catch (err) {
-    return res.status(500).json({ message: err });
-  }
-});
+        { ...offerData, _id },
+      );
+      const offer: Offer = records.records[0].get("o").properties;
+      return res.status(200).json({ message: "Success!", offer: offer });
+    } catch (err) {
+      return res.status(500).json({ message: err });
+    }
+  },
+);
 
 /**
  * @PATCH
@@ -142,33 +135,28 @@ router.post("/offer", async (req: Request, res: Response) => {
  * @resParam offer: Offer       Response offer object.
  *
  */
-router.patch("/offer/:id", async (req: Request, res: Response) => {
-  const id: string = req.params.id;
+router.patch(
+  "/offer/:id",
+  validateRequestBody<Offer>(validateOfferFields),
+  async (req: Request, res: Response) => {
+    const id: string = req.params.id;
+    const offerData: Offer = req.body;
+    const queryProps = getQueryProps(offerData);
 
-  const offerData: Offer = req.body;
-  const [vRes, vErrors] = validate<Offer>(offerData, validateOfferFields);
-
-  if (!vRes) {
-    return res.status(400).json({
-      message: vErrors,
-    });
-  }
-
-  const queryProps = getQueryProps(offerData);
-
-  try {
-    const records = await neo4jWrapper(
-      `MATCH (o:Offer {id:$id}) SET o += {${queryProps}}
+    try {
+      const records = await neo4jWrapper(
+        `MATCH (o:Offer {id:$id}) SET o += {${queryProps}}
       RETURN o
       `,
-      { ...offerData, id },
-    );
-    const offer: Offer = records.records[0].get("o").properties;
+        { ...offerData, id },
+      );
+      const offer: Offer = records.records[0].get("o").properties;
 
-    return res.status(200).json({ message: "Success!", offer: offer });
-  } catch (err) {
-    return res.status(500).json({ message: err });
-  }
-});
+      return res.status(200).json({ message: "Success!", offer: offer });
+    } catch (err) {
+      return res.status(500).json({ message: err });
+    }
+  },
+);
 
 export default router;
