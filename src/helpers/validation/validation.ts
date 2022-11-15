@@ -1,4 +1,7 @@
 import Ajv, { ValidateFunction } from "ajv";
+import { RegisterReq } from "../../interfaces/auth";
+import { Offer } from "../../interfaces/offer";
+import { Candidate, Recruiter } from "../../interfaces/user";
 
 import {
   userFragileProps,
@@ -6,7 +9,7 @@ import {
   userAdditionalProps,
   candidateOnlyProps,
   recruiterOnlyProps,
-  offerProps,
+  offerProps
 } from "./validationInterfaces";
 
 const ajv = new Ajv();
@@ -16,7 +19,7 @@ const validate = <T>(data: T, validation: ValidateFunction) => {
   return [result, ajv.errorsText(validation.errors)];
 };
 
-export const validateRegisterFields = ajv.compile({
+export const validateRegisterFields = ajv.compile<RegisterReq>({
   properties: {
     ...userFragileProps,
     ...userBasicProps,
@@ -26,7 +29,7 @@ export const validateRegisterFields = ajv.compile({
   additionalProperties: false,
 });
 
-export const validateRecruiterFields = ajv.compile({
+export const validateRecruiterFields = ajv.compile<Recruiter>({
   properties: {
     ...userBasicProps,
     ...userAdditionalProps,
@@ -37,7 +40,7 @@ export const validateRecruiterFields = ajv.compile({
   additionalProperties: false,
 });
 
-export const validateCandidateFields = ajv.compile({
+export const validateCandidateFields = ajv.compile<Candidate>({
   properties: {
     ...userBasicProps,
     ...userAdditionalProps,
@@ -48,7 +51,7 @@ export const validateCandidateFields = ajv.compile({
   additionalProperties: false,
 });
 
-export const validateOfferFields = ajv.compile({
+export const validateOfferFields = ajv.compile<Offer>({
   properties: {
     ...offerProps,
   },

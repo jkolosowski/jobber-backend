@@ -1,7 +1,8 @@
 import { Router, Request, Response } from "express";
 
-import validate, { validateCandidateFields } from "../../helpers/validation";
+import { validateCandidateFields } from "../../helpers/validation/validation";
 import { Candidate } from "../../interfaces/user";
+import { validateRequestBody } from "../../config/middlewares";
 import { neo4jWrapper } from "../../config/neo4jDriver";
 import User from "../../models/User";
 
@@ -25,45 +26,38 @@ const router = Router();
  *
  * @resParam message: string        Response message.
  */
-router.patch("/", async (req: Request, res: Response) => {
-  //TODO: Check credentials (check if user id is equal to request id)
+router.patch(
+  "/",
+  validateRequestBody<Candidate>(validateCandidateFields),
+  async (req: Request, res: Response) => {
+    const candidateData: Candidate = req.body;
+    const _id = req.user!._id.toString();
+    const previousEmail = req?.user?.email;
 
-  const candidateData: Candidate = req.body;
-  const [vRes, vErrors] = validate<Candidate>(
-    candidateData,
-    validateCandidateFields,
-  );
+    try {
+      await User.findByIdAndUpdate(_id, {
+        $set: { email: candidateData.email },
+      });
+    } catch (err) {
+      return res.status(500).json({ message: err });
+    }
 
-  if (!vRes) {
-    return res.status(400).json({
-      message: vErrors,
-    });
-  }
+    const queryProps = Object.keys(candidateData)
+      .map((key) => `${key}: $${key}`)
+      .join(", ");
 
-  const _id = req?.user?._id.toString();
-  const previousEmail = req?.user?.email;
+    try {
+      await neo4jWrapper(
+        `MATCH (c:Candidate {_id: $_id}) SET c += {${queryProps}} RETURN c`,
+        { ...candidateData, _id },
+      );
+    } catch (err) {
+      await User.findByIdAndUpdate(_id, { $set: { email: previousEmail } });
+      return res.status(500).json({ message: err });
+    }
 
-  try {
-    await User.findByIdAndUpdate(_id, { $set: { email: candidateData.email } });
-  } catch (err) {
-    return res.status(500).json({ message: err });
-  }
-
-  const queryProps = Object.keys(candidateData)
-    .map((key) => `${key}: $${key}`)
-    .join(", ");
-
-  try {
-    await neo4jWrapper(
-      `MATCH (r:Candidate {_id: $_id}) SET r += {${queryProps}}`,
-      { ...candidateData, _id },
-    );
-  } catch (err) {
-    await User.findByIdAndUpdate(_id, { $set: { email: previousEmail } });
-    return res.status(500).json({ message: err });
-  }
-
-  return res.status(200).json({ message: "Success!" });
-});
+    return res.status(200).json({ message: "Success!" });
+  },
+);
 
 export default router;

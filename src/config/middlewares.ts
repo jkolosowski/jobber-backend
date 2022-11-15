@@ -1,4 +1,7 @@
+import { AnyValidateFunction } from "ajv/dist/core";
 import { Request, Response, NextFunction } from "express";
+
+import validate from "../helpers/validation/validation";
 
 const authenticationCheck = (
   req: Request,
@@ -18,6 +21,21 @@ export const accountTypeCheck =
     if (accountType !== userAccountType) {
       return res.status(401).json({ message: "Unauthorized!" });
     }
+    return next();
+  };
+
+export const validateRequestBody =
+  <T>(validation: AnyValidateFunction<T>) =>
+  (req: Request, res: Response, next: NextFunction) => {
+    const candidateData: T = req.body;
+    const [vRes, vErrors] = validate<T>(candidateData, validation);
+
+    if (!vRes) {
+      return res.status(400).json({
+        message: vErrors,
+      });
+    }
+
     return next();
   };
 

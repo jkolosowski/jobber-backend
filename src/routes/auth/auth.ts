@@ -4,7 +4,9 @@ import { Router, Request, Response } from "express";
 import User from "../../models/User";
 import { RegisterReq } from "../../interfaces/auth";
 import { neo4jWrapper } from "../../config/neo4jDriver";
-import validate, { validateRegisterFields } from "../../helpers/validation";
+import { validateRegisterFields } from "../../helpers/validation/validation";
+import { validateRequestBody } from "../../config/middlewares";
+import { getProperties } from "../../helpers/neo4j";
 
 const router = Router();
 
@@ -30,66 +32,60 @@ const router = Router();
  * @resParam user.lastName: string                  Registered user's last name.
  * @resParam user.accountType: string               Registered user's account type.
  */
-router.post("/register", async (req: Request, res: Response) => {
-  const [vRes, vErrors] = validate<RegisterReq>(
-    req.body,
-    validateRegisterFields,
-  );
-  if (!vRes) {
-    return res.status(400).json({
-      message: vErrors,
-    });
-  }
+router.post(
+  "/register",
+  validateRequestBody<RegisterReq>(validateRegisterFields),
+  async (req: Request, res: Response) => {
+    const { email, password, accountType, firstName, lastName }: RegisterReq =
+      req.body;
 
-  const { email, password, accountType, firstName, lastName }: RegisterReq =
-    req.body;
+    return User.register(
+      { email, accountType },
+      password,
+      async (err, user: Express.AuthenticatedUser) => {
+        if (err) {
+          return res.status(500).json({
+            message: err,
+          });
+        }
 
-  return User.register(
-    { email, accountType },
-    password,
-    async (err, user: Express.AuthenticatedUser) => {
-      if (err) {
-        return res.status(500).json({
-          message: err,
-        });
-      }
+        const _id = user?._id.toString();
 
-      const _id = user?._id.toString();
+        try {
+          const user = await neo4jWrapper(
+            `MERGE (u:User:${accountType} {
+            id: randomUUID(),
+            _id: $_id,
+            email: $email,
+            firstName: $firstName,
+            lastName: $lastName}) RETURN u.id`,
+            {
+              _id,
+              email,
+              firstName,
+              lastName,
+            },
+          );
 
-      try {
-        const user = await neo4jWrapper(
-          `MERGE (u:User:${accountType} {
-        id: randomUUID(),
-        _id: $_id,
-        email: $email,
-        firstName: $firstName,
-        lastName: $lastName}) RETURN u.id`,
-          {
-            _id,
+          return res.status(201).json({
+            massage: "Succesfully created an account!",
+            id: user.records[0]?.get("u.id"),
             email,
             firstName,
             lastName,
-          },
-        );
+            accountType,
+          });
+        } catch (err) {
+          await User.findByIdAndDelete(_id);
 
-        return res.status(201).json({
-          massage: "Succesfully created an account!",
-          id: user.records[0]?.get("u.id"),
-          email,
-          firstName,
-          lastName,
-          accountType,
-        });
-      } catch (err) {
-        await User.findByIdAndDelete(_id);
-
-        return res.status(500).json({
-          message: err,
-        });
-      }
-    },
-  );
-});
+          return res.status(500).json({
+            message: err,
+          });
+        }
+      },
+    );
+  },
+);
 
 /**
  * @POST
@@ -131,20 +127,11 @@ router.post("/login", (req: Request, res: Response) => {
         { _id },
       );
 
-      const tempObject: { [key: string]: any } = { accountType };
-      const userResult = Object.entries<any>(
-        userData.records[0].get("u").properties,
-      ).reduce((currVal, [key, value]) => {
-        if (key === "_id") {
-          return currVal;
-        }
+      const userResult = getProperties(userData, ["u"], ["_id"])[0].u;
 
-        currVal[key] = value;
-
-        return { ...currVal };
-      }, tempObject);
-
-      return res.status(201).json({ message: "Success!", user: userResult });
+      return res
+        .status(201)
+        .json({ message: "Success!", user: { ...userResult, accountType } });
     });
   })(req, res);
 });
