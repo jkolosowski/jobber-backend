@@ -68,7 +68,7 @@ router.post(
           );
 
           return res.status(201).json({
-            massage: "Succesfully created an account!",
+            massage: "Successfully created an account!",
             id: user.records[0]?.get("u.id"),
             email,
             firstName,
