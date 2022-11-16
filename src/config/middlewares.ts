@@ -1,7 +1,9 @@
 import { AnyValidateFunction } from "ajv/dist/core";
 import { Request, Response, NextFunction } from "express";
 
+import mongoConnection from "./mongo";
 import validate from "../helpers/validation/validation";
+import { ClientSession } from "mongoose";
 
 const authenticationCheck = (
   req: Request,
@@ -38,5 +40,25 @@ export const validateRequestBody =
 
     return next();
   };
+
+export const startMongoTransaction = async (
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+) => {
+  req.mongoSession = await mongoConnection.startSession();
+  req.mongoSession.startTransaction();
+  next();
+};
+
+export const commitMongoTransaction = async (session: ClientSession | undefined) => {
+  await session?.commitTransaction();
+  await session?.endSession();
+};
+
+export const abortMongoTransaction = async (session: ClientSession | undefined) => {
+  await session?.abortTransaction();
+  await session?.endSession();
+};
 
 export default authenticationCheck;

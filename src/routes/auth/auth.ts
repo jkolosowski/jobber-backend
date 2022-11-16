@@ -107,7 +107,7 @@ router.post(
  * @resParam user.accountType: string User account type.
  */
 router.post("/login", (req: Request, res: Response) => {
-  passport.authenticate("local", (err, user: Express.AuthenticatedUser) => {
+  passport.authenticate("local", (err, user: Express.User) => {
     if (err) {
       return res.status(500).json({ message: err });
     } else if (!user) {

@@ -1,16 +1,34 @@
-export const userFragileProps = {
+export const userEmail = {
+  email: {
+    type: "string",
+  },
+};
+
+export const userPassword = {
   password: {
     type: "string",
   },
+};
+
+export const userNewPassword = {
+  newPassword: {
+    type: "string",
+  },
+};
+
+export const userAccountType = {
   accountType: {
     type: "string",
   },
 };
 
+export const userFragileProps = {
+  ...userPassword,
+  ...userAccountType,
+};
+
 export const userBasicProps = {
-  email: {
-    type: "string",
-  },
+  ...userEmail,
   firstName: {
     type: "string",
   },
