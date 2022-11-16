@@ -1,5 +1,5 @@
 import Ajv, { ValidateFunction } from "ajv";
-import { RegisterReq } from "../../interfaces/auth";
+import { RegisterReq, UpdateCredentialsReq } from "../../interfaces/auth";
 import { Offer } from "../../interfaces/offer";
 import { Candidate, Recruiter } from "../../interfaces/user";
 
@@ -9,7 +9,10 @@ import {
   userAdditionalProps,
   candidateOnlyProps,
   recruiterOnlyProps,
-  offerProps
+  offerProps,
+  userEmail,
+  userPassword,
+  userNewPassword,
 } from "./validationInterfaces";
 
 const ajv = new Ajv();
@@ -29,13 +32,24 @@ export const validateRegisterFields = ajv.compile<RegisterReq>({
   additionalProperties: false,
 });
 
+export const validateUpdateCredentialsFields = ajv.compile<UpdateCredentialsReq>({
+  properties: {
+    ...userEmail,
+    ...userPassword,
+    ...userNewPassword
+  },
+  required: ["email", "password"],
+  type: "object",
+  additionalProperties: false,
+});
+
 export const validateRecruiterFields = ajv.compile<Recruiter>({
   properties: {
     ...userBasicProps,
     ...userAdditionalProps,
     ...recruiterOnlyProps,
   },
-  required: ["firstName", "lastName", "email", "phoneNumber", "country"],
+  required: ["firstName", "lastName", "phoneNumber", "country"],
   type: "object",
   additionalProperties: false,
 });
@@ -46,7 +60,7 @@ export const validateCandidateFields = ajv.compile<Candidate>({
     ...userAdditionalProps,
     ...candidateOnlyProps,
   },
-  required: ["firstName", "lastName", "email", "phoneNumber", "country"],
+  required: ["firstName", "lastName", "phoneNumber", "country"],
   type: "object",
   additionalProperties: false,
 });

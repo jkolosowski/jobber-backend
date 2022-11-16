@@ -30,13 +30,13 @@ router.patch(
   "/",
   validateRequestBody<Candidate>(validateCandidateFields),
   async (req: Request, res: Response) => {
-    const candidateData: Candidate = req.body;
+    const {email, ...candidateData}: Candidate = req.body;
     const _id = req.user!._id.toString();
     const previousEmail = req?.user?.email;
 
     try {
       await User.findByIdAndUpdate(_id, {
-        $set: { email: candidateData.email },
+        $set: { email: email },
       });
     } catch (err) {
       return res.status(500).json({ message: err });

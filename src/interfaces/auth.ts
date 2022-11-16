@@ -9,3 +9,7 @@ export interface RegisterReq
     AccountType,
     FirstName,
     LastName {}
+
+export interface UpdateCredentialsReq extends LoginReq {
+  newPassword: string;
+}

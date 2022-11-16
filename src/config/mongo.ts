@@ -14,7 +14,7 @@ mongoose.connect(mongoHost, {
   dbName: database,
 });
 
-mongoose.connection
+const mongoConnection = mongoose.connection
   .on("connected", () => {
     console.log("Connected to MongoDB");
   })
@@ -28,4 +28,4 @@ mongoose.connection
 export const Schema = mongoose.Schema;
 export const model = mongoose.model;
 
-export default mongoose;
+export default mongoConnection;

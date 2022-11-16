@@ -68,7 +68,7 @@ router.post(
           );
 
           return res.status(201).json({
-            massage: "Succesfully created an account!",
+            massage: "Successfully created an account!",
             id: user.records[0]?.get("u.id"),
             email,
             firstName,
@@ -107,7 +107,7 @@ router.post(
  * @resParam user.accountType: string User account type.
  */
 router.post("/login", (req: Request, res: Response) => {
-  passport.authenticate("local", (err, user: Express.AuthenticatedUser) => {
+  passport.authenticate("local", (err, user: Express.User) => {
     if (err) {
       return res.status(500).json({ message: err });
     } else if (!user) {

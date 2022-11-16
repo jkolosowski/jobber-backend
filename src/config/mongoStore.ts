@@ -1,8 +1,8 @@
-import mongoose from "./mongo";
+import mongoConnection from "./mongo";
 import MongoStore from "connect-mongo";
 
 export default MongoStore.create({
-  client: mongoose.connection.getClient(),
+  client: mongoConnection.getClient(),
   collectionName: "sessions",
   stringify: false,
 });

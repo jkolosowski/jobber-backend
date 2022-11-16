@@ -3,7 +3,7 @@ import { QueryResult } from "neo4j-driver";
 export const getProperties = (
   queryResult: QueryResult,
   pickKeys: string[],
-  omitProps: string[],
+  omitProps: string[] = [],
 ) => {
   return queryResult.records.map((record) => {
     return pickKeys.reduce((result, key) => {
