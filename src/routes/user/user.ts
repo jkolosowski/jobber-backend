@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 
-import { validateRequestBody } from "../../config/middlewares";
+import { validateRequestBody, authenticate } from "../../config/middlewares";
 import { neo4jWrapper } from "../../config/neo4jDriver";
 import { getProperties } from "../../helpers/neo4j";
 import { validateUpdateCredentialsFields } from "../../helpers/validation/validation";
@@ -77,29 +77,36 @@ router.get("/", async (req: Request, res: Response) => {
 router.patch(
   "/",
   validateRequestBody<UpdateCredentialsReq>(validateUpdateCredentialsFields),
+  authenticate,
   async (req: Request, res: Response) => {
     // TODO: Marek Połom - Introduce Mongo transactions (replica set) to get rid of all this redundant code.
-    const newCredentials: UpdateCredentialsReq = req.body;
+    const { newEmail, newPassword, password }: UpdateCredentialsReq = req.body;
     const _id = req.user?._id.toString();
 
+    if (
+      (!newEmail || newEmail === "") &&
+      (!newPassword || newPassword === "")
+    ) {
+      return res.status(400).json({ message: "Missing both new email and new password!" });
+    }
+
+    const newUserEmail =
+      !newEmail || newEmail === "" ? req.user!.email : newEmail;
+    const newUserPassword =
+      !newPassword || newPassword === "" ? password : newPassword;
+
     try {
-      await req.user?.changePassword(
-        newCredentials.password,
-        newCredentials.newPassword,
-      );
+      await req.user?.changePassword(password, newUserPassword);
     } catch (err) {
       return res.status(500).json({ message: err });
     }
 
     try {
       await User.findByIdAndUpdate(_id, {
-        $set: { email: newCredentials.email },
+        $set: { email: newUserEmail },
       });
     } catch (err) {
-      await req.user?.changePassword(
-        newCredentials.newPassword,
-        newCredentials.password,
-      );
+      await req.user?.changePassword(newUserPassword, password);
 
       return res.status(500).json({ message: err });
     }
@@ -107,7 +114,7 @@ router.patch(
     try {
       const userData = await neo4jWrapper(
         "MATCH (u:User {_id: $_id}) SET u += {email: $email} RETURN u",
-        { email: newCredentials.email, _id },
+        { email: newUserEmail, _id },
       );
       const userProperties = getProperties(userData, ["u"], ["_id"])[0].u;
 
@@ -116,10 +123,7 @@ router.patch(
         user: { ...userProperties, accountType: req.user?.accountType },
       });
     } catch (err) {
-      await req.user?.changePassword(
-        newCredentials.newPassword,
-        newCredentials.password,
-      );
+      await req.user?.changePassword(newUserPassword, password);
 
       await User.findByIdAndUpdate(_id, {
         $set: { email: req.user?.email },
@@ -145,7 +149,7 @@ router.delete("/", async (req: Request, res: Response) => {
 
   await User.findByIdAndDelete(_id);
   await neo4jWrapper(
-    "MATCH (u:User {_id: $_id}) WITH u OPTIONAL MATCH (u)-[:CREATE_OFFER]->(o:Offer) DETACH DELETE u, o",
+    "MATCH (u:User {_id: $_id}) WITH u OPTIONAL MATCH (u)-[:CREATE_OFFER]->(o:Offer) SET o.status = closed DETACH DELETE u",
     { _id },
   );
 

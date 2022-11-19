@@ -2,6 +2,7 @@ import Ajv, { ValidateFunction } from "ajv";
 import { RegisterReq, UpdateCredentialsReq } from "../../interfaces/auth";
 import { Offer } from "../../interfaces/offer";
 import { Candidate, Recruiter } from "../../interfaces/user";
+import { emptyStringRegEx, passwordRegEx, newPasswordRegEx, emailRegEx, newEmailRegEx } from "./regex";
 
 import {
   userFragileProps,
@@ -10,12 +11,18 @@ import {
   candidateOnlyProps,
   recruiterOnlyProps,
   offerProps,
-  userEmail,
   userPassword,
-  userNewPassword,
+  newUserPassword,
+  newUserEmail,
 } from "./validationInterfaces";
 
 const ajv = new Ajv();
+
+ajv.addFormat("password", passwordRegEx);
+ajv.addFormat("newPassword", newPasswordRegEx);
+ajv.addFormat("email", emailRegEx);
+ajv.addFormat("newEmail", newEmailRegEx);
+ajv.addFormat("emptyString", emptyStringRegEx);
 
 const validate = <T>(data: T, validation: ValidateFunction) => {
   const result = validation(data);
@@ -32,16 +39,17 @@ export const validateRegisterFields = ajv.compile<RegisterReq>({
   additionalProperties: false,
 });
 
-export const validateUpdateCredentialsFields = ajv.compile<UpdateCredentialsReq>({
-  properties: {
-    ...userEmail,
-    ...userPassword,
-    ...userNewPassword
-  },
-  required: ["email", "password"],
-  type: "object",
-  additionalProperties: false,
-});
+export const validateUpdateCredentialsFields =
+  ajv.compile<UpdateCredentialsReq>({
+    properties: {
+      ...userPassword,
+      ...newUserEmail,
+      ...newUserPassword,
+    },
+    required: ["password"],
+    type: "object",
+    additionalProperties: false,
+  });
 
 export const validateRecruiterFields = ajv.compile<Recruiter>({
   properties: {

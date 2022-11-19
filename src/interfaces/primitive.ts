@@ -13,3 +13,11 @@ export interface FirstName {
 export interface LastName {
   lastName: string;
 }
+
+export interface NewEmail {
+  newEmail?: string
+}
+
+export interface NewPassword {
+  newPassword?: string
+}
