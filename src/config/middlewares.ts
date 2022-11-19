@@ -1,3 +1,4 @@
+import passport from "passport";
 import { AnyValidateFunction } from "ajv/dist/core";
 import { Request, Response, NextFunction } from "express";
 
@@ -14,6 +15,19 @@ const authenticationCheck = (
     return res.status(401).json({ message: "Unauthenticated" });
   }
   return next();
+};
+
+export const authenticate = (req: Request, res: Response, next: NextFunction) => {
+  req.body.email = req.user!.email;
+  
+  passport.authenticate("local", (err, user: Express.User) => {
+    if (err) {
+      return res.status(500).json({ message: err });
+    } else if (!user) {
+      return res.status(401).json({ message: "Bad credentials!" });
+    }
+    return next();
+  })(req, res);
 };
 
 export const accountTypeCheck =

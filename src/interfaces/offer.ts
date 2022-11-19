@@ -7,5 +7,5 @@ export interface Offer {
   topPayrange: number;
   currency: string;
   description: string;
-  status: string;
+  status: "open" | "closed";
 }

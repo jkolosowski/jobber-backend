@@ -1,18 +1,28 @@
 export const userEmail = {
   email: {
     type: "string",
+    format: "email"
+  },
+};
+
+export const newUserEmail = {
+  newEmail: {
+    type: "string",
+    format: "newEmail"
   },
 };
 
 export const userPassword = {
   password: {
     type: "string",
+    format: "password"
   },
 };
 
-export const userNewPassword = {
+export const newUserPassword = {
   newPassword: {
     type: "string",
+    format: "newPassword"
   },
 };
 

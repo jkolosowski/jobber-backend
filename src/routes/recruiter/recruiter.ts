@@ -129,7 +129,7 @@ router.post(
  * @reqParam topPayrange: number       Top Payrange.
  * @reqParam currency: string        Currency.
  * @reqParam description: string        Description of the offer.
- * @reqParam status: string        Status offer (open or close).
+ * @reqParam status: string        Status offer (open or closed).
  * 
  * @resParam message: string        Response message.
  * @resParam offer: Offer       Response offer object.

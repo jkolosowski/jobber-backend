@@ -1,4 +1,4 @@
-import { Email, AccountType, FirstName, LastName } from "./primitive";
+import { Email, AccountType, FirstName, LastName, NewEmail, NewPassword } from "./primitive";
 
 export interface LoginReq extends Email {
   password: string;
@@ -10,6 +10,6 @@ export interface RegisterReq
     FirstName,
     LastName {}
 
-export interface UpdateCredentialsReq extends LoginReq {
-  newPassword: string;
+export interface UpdateCredentialsReq extends NewPassword, NewEmail, Omit<LoginReq, "email"> {
+  email?: string;
 }
