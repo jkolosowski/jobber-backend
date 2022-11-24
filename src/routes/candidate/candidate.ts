@@ -5,6 +5,7 @@ import { Candidate } from "../../interfaces/user";
 import { validateRequestBody } from "../../config/middlewares";
 import { neo4jWrapper } from "../../config/neo4jDriver";
 import User from "../../models/User";
+import { getQueryProps } from "../../helpers/query";
 
 const router = Router();
 
@@ -30,7 +31,7 @@ router.patch(
   "/",
   validateRequestBody<Candidate>(validateCandidateFields),
   async (req: Request, res: Response) => {
-    const {email, ...candidateData}: Candidate = req.body;
+    const { email, ...candidateData }: Candidate = req.body;
     const _id = req.user!._id.toString();
     const previousEmail = req?.user?.email;
 
@@ -42,9 +43,7 @@ router.patch(
       return res.status(500).json({ message: err });
     }
 
-    const queryProps = Object.keys(candidateData)
-      .map((key) => `${key}: $${key}`)
-      .join(", ");
+    const queryProps = getQueryProps(candidateData);
 
     try {
       await neo4jWrapper(

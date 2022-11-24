@@ -2,7 +2,13 @@ import Ajv, { ValidateFunction } from "ajv";
 import { RegisterReq, UpdateCredentialsReq } from "../../interfaces/auth";
 import { Offer } from "../../interfaces/offer";
 import { Candidate, Recruiter } from "../../interfaces/user";
-import { emptyStringRegEx, passwordRegEx, newPasswordRegEx, emailRegEx, newEmailRegEx } from "./regex";
+import {
+  emptyStringRegEx,
+  passwordRegEx,
+  newPasswordRegEx,
+  emailRegEx,
+  newEmailRegEx,
+} from "./regex";
 
 import {
   userFragileProps,
@@ -80,6 +86,32 @@ export const validateOfferFields = ajv.compile<Offer>({
   required: ["title", "companyName", "location", "experience", "description"],
   type: "object",
   additionalProperties: false,
+  allOf: [
+    {
+      if: {
+        required: ["bottomPayrange"],
+      },
+      then: {
+        required: ["currency", "topPayrange"],
+      },
+    },
+    {
+      if: {
+        required: ["topPayrange"],
+      },
+      then: {
+        required: ["currency", "bottomPayrange"],
+      },
+    },
+    {
+      if: {
+        required: ["currency"],
+      },
+      then: {
+        required: ["topPayrange", "bottomPayrange"],
+      },
+    },
+  ],
 });
 
 export default validate;
