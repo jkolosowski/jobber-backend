@@ -78,6 +78,12 @@ export const recruiterOnlyProps = {
 };
 
 export const offerProps = {
+  id: {
+    type: "string",
+  },
+  creationDate: {
+    type: "string",
+  },
   title: {
     type: "string",
   },
