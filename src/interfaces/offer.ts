@@ -1,4 +1,8 @@
+import { DateTime } from "neo4j-driver";
+
 export interface Offer {
+  id?: string;
+  creationDate?: string | DateTime;
   title: string;
   companyName: string;
   location: string;

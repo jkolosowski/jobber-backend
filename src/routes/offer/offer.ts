@@ -1,6 +1,9 @@
 import { Router, Request, Response } from "express";
-
 import { neo4jWrapper } from "../../config/neo4jDriver";
+import {
+  getOffer,
+  getOffersFromRecords,
+} from "../../helpers/converter/offerConverter";
 import { Offer } from "../../interfaces/offer";
 
 const router = Router();
@@ -25,14 +28,7 @@ router.get("/", async (_, res: Response) => {
       `,
       {},
     );
-    const init: Array<Offer> = [];
-    const offers: Array<Offer> = records.records.reduce((result, record) => {
-      const offer: Offer = record.get("o").properties;
-      if (offer) {
-        return [offer, ...result];
-      }
-      return result;
-    }, init);
+    const offers = getOffersFromRecords(records, "o");
 
     return res.status(200).json({ message: "Success!", offers: offers });
   } catch (err) {
@@ -62,9 +58,12 @@ router.get("/:id", async (req: Request, res: Response) => {
       `,
       { id },
     );
-    const offer: Offer = records.records[0].get("o").properties;
+    const offer: Offer = getOffer(records.records[0], "o");
 
-    return res.status(200).json({ message: "Success!", offer: offer });
+    return res.status(200).json({
+      message: "Success!",
+      offer,
+    });
   } catch (err) {
     return res.status(500).json({ message: err });
   }
