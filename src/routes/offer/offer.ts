@@ -1,4 +1,4 @@
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import { neo4jWrapper } from "../../config/neo4jDriver";
 import {
   getOffer,
@@ -49,7 +49,7 @@ router.get("/", async (_, res: Response) => {
  * @resParam offer: Offer       Response offer object.
  *
  */
-router.get("/:id", async (req: Request, res: Response) => {
+router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
   const id: string = req.params.id;
   try {
     const records = await neo4jWrapper(
@@ -65,7 +65,7 @@ router.get("/:id", async (req: Request, res: Response) => {
       offer,
     });
   } catch (err) {
-    return res.status(500).json({ message: err });
+    return next(err);
   }
 });
 

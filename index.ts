@@ -9,6 +9,7 @@ import routes from "./src/routes/routes";
 import serverConfig from "./src/config/serverConfig";
 import session from "./src/config/session";
 import User, { usernameField } from "./src/models/User";
+import errorHandler from "./src/errors/errorHandler";
 
 const app: Express = express();
 app.use(express.json());
@@ -31,6 +32,8 @@ passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
 app.use(routes);
+
+app.use(errorHandler);
 
 app.listen(serverConfig.port, () => {
   console.log(
