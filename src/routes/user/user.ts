@@ -149,7 +149,7 @@ router.delete("/", async (req: Request, res: Response) => {
 
   await User.findByIdAndDelete(_id);
   await neo4jWrapper(
-    "MATCH (u:User {_id: $_id}) WITH u OPTIONAL MATCH (u)-[:CREATE_OFFER]->(o:Offer) SET o.status = closed DETACH DELETE u",
+    "MATCH (u:User {_id: $_id}) WITH u OPTIONAL MATCH (u)-[:CREATE_OFFER]->(o:Offer) SET o.status = 'closed' DETACH DELETE u",
     { _id },
   );
 
