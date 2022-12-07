@@ -70,6 +70,42 @@ router.patch(
 );
 
 /**
+ * @GET
+ * Get recruiter offer with specified ID.
+ *
+ * @path /recruiter/offer/:id
+ * @pathParam id: string Id of a offer.
+ *
+ * @contentType application/json
+ *
+ * @resParam message: string Response message.
+ * @resParam offer: Offer    Response offer object.
+ *
+ */
+router.get("/offer/:id", async (req: Request, res: Response) => {
+  const offerId: string = req.params.id;
+  const userId = req.user?._id.toString();
+
+  try {
+    const records = await neo4jWrapper(
+      `
+       MATCH (:Recruiter {_id: $userId})-[:CREATE_OFFER]->(o:Offer {id: $offerId})
+       RETURN o
+      `,
+      { userId, offerId },
+    );
+    const offer: Offer = getOffer(records.records[0], "o");
+
+    return res.status(200).json({
+      message: "Success!",
+      offer,
+    });
+  } catch (err) {
+    return res.status(500).json({ message: err });
+  }
+});
+
+/**
  * @POST
  * Create a new offer and relation between recruiter and offer.
  *
