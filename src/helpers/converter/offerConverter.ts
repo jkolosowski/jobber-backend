@@ -20,6 +20,8 @@ export const getOffersFromRecords = (
 const newOfferTime = 60000;
 
 export const getOffer = (record: any, property: string) => {
+  if(!record) throw Error("apiOfferNotFound");
+
   const offer: Offer = record.get(property).properties;
 
   const creationDate: string = parseDate(offer.creationDate as DateTime);

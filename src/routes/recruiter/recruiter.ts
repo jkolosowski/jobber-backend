@@ -1,4 +1,4 @@
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import {
   validateOfferFields,
   validateRecruiterFields,
@@ -82,7 +82,7 @@ router.patch(
  * @resParam offer: Offer    Response offer object.
  *
  */
-router.get("/offer/:id", async (req: Request, res: Response) => {
+router.get("/offer/:id", async (req: Request, res: Response, next: NextFunction) => {
   const offerId: string = req.params.id;
   const userId = req.user?._id.toString();
 
@@ -101,7 +101,7 @@ router.get("/offer/:id", async (req: Request, res: Response) => {
       offer,
     });
   } catch (err) {
-    return res.status(500).json({ message: err });
+    next(err);
   }
 });
 
