@@ -14,6 +14,7 @@ import {
   getOffersFromRecords,
 } from "../../helpers/converter/offerConverter";
 import { getCandidatesFromRecords } from "../../helpers/converter/candidateConverte";
+import { log } from "console";
 
 const router = Router();
 
@@ -82,28 +83,31 @@ router.patch(
  * @resParam offer: Offer    Response offer object.
  *
  */
-router.get("/offer/:id", async (req: Request, res: Response, next: NextFunction) => {
-  const offerId: string = req.params.id;
-  const userId = req.user?._id.toString();
+router.get(
+  "/offer/:id",
+  async (req: Request, res: Response, next: NextFunction) => {
+    const offerId: string = req.params.id;
+    const userId = req.user?._id.toString();
 
-  try {
-    const records = await neo4jWrapper(
-      `
+    try {
+      const records = await neo4jWrapper(
+        `
        MATCH (:Recruiter {_id: $userId})-[:CREATE_OFFER]->(o:Offer {id: $offerId})
        RETURN o
       `,
-      { userId, offerId },
-    );
-    const offer: Offer = getOffer(records.records[0], "o");
+        { userId, offerId },
+      );
+      const offer: Offer = getOffer(records.records[0], "o");
 
-    return res.status(200).json({
-      message: "Success!",
-      offer,
-    });
-  } catch (err) {
-    next(err);
-  }
-});
+      return res.status(200).json({
+        message: "Success!",
+        offer,
+      });
+    } catch (err) {
+      return next(err);
+    }
+  },
+);
 
 /**
  * @POST
@@ -184,17 +188,27 @@ router.patch(
   validateRequestBody<Offer>(validateOfferFields),
   async (req: Request, res: Response) => {
     const id: string = req.params.id;
+    const userId = req?.user?._id.toString();
     const offerData: Offer = req.body;
     const queryProps = getQueryProps(offerData);
 
     try {
       const records = await neo4jWrapper(
-        `MATCH (o:Offer {id:$id}) SET o += {${queryProps}}
+        `MATCH (:Recruiter {_id: $userId})-[:CREATE_OFFER]->(o:Offer {id:$id}) SET o += {${queryProps}}
       RETURN o
       `,
-        { ...offerData, id },
+        { ...offerData, id, userId },
       );
-      const offer: Offer = getOffer(records.records[0], "o");
+
+      const data = records.records[0];
+
+      if (data === undefined) {
+        return res.status(200).json({
+          message: "Offer did not find",
+        });
+      }
+
+      const offer: Offer = getOffer(data, "o");
 
       return res.status(200).json({
         message: "Success!",
