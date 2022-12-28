@@ -10,8 +10,53 @@ import {
   getOffer,
   getOffersFromRecords,
 } from "../../helpers/converter/offerConverter";
+import { getProperties } from "../../helpers/neo4j";
 
 const router = Router();
+
+/**
+ * @GET
+ * GET candidate account information.
+ *
+ * @path /candidate
+ *
+ * @contentType application/json
+ *
+ *
+ * @resParam message: string Response message.
+ * @resParam candidate: Candidate    Response candidate object.
+ *
+ * {
+ *    id: string             id.
+ *    email: string          User email.
+ *    firstName: string      First name.
+ *    lastName: string       Last name.
+ *    phoneNumber: string    Phone number.
+ *    country: string        Home country.
+ *    avatar: string         The link to avatar or Base64.
+ *    portfolio: string      Portfolio of a candidate.
+ *    bio: string            Short description about candidate.
+ *    linkedin: string       The link to Linkedin.
+ *    avatar: string         The link to avatar or Base64.
+ * }
+ *
+ */
+router.get("/", async (req: Request, res: Response) => {
+  const _id = req?.user?._id.toString();
+
+  try {
+    const userData = await neo4jWrapper(
+      `MATCH (c:Candidate {_id: $_id}) RETURN c`,
+      {
+        _id,
+      },
+    );
+    const candidate: Candidate = getProperties(userData, ["c"], ["_id"])[0].c;
+    return res.status(200).json({ message: "Success!", candidate });
+  } catch (err) {
+    return res.status(500).json({ message: err });
+  }
+});
 
 /**
  * @PATCH
@@ -26,10 +71,14 @@ const router = Router();
  * @reqParam lastName: string       Last name.
  * @reqParam phoneNumber: string    Phone number.
  * @reqParam country: string        Home country.
+ * @reqParam linkedin: string       The link to Linkedin.
+ * @reqParam avatar: string         The link to avatar or Base64.
  * @reqParam portfolio: string      Portfolio of a candidate.
  * @reqParam bio: string            Short description about candidate.
  *
  * @resParam message: string        Response message.
+ * @resParam candidate: Candidate    Response candidate object.
+ *
  */
 router.patch(
   "/",
@@ -49,17 +98,19 @@ router.patch(
 
     const queryProps = getQueryProps(candidateData);
 
+    // TODO: Handling picture (avatar)
     try {
-      await neo4jWrapper(
+      const userData = await neo4jWrapper(
         `MATCH (c:Candidate {_id: $_id}) SET c += {${queryProps}} RETURN c`,
         { ...candidateData, _id },
       );
+
+      const candidate: Candidate = getProperties(userData, ["c"], ["_id"])[0].c;
+      return res.status(200).json({ message: "Success!", candidate });
     } catch (err) {
       await User.findByIdAndUpdate(_id, { $set: { email: previousEmail } });
       return res.status(500).json({ message: err });
     }
-
-    return res.status(200).json({ message: "Success!" });
   },
 );
 

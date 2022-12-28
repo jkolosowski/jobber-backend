@@ -61,7 +61,7 @@ router.post(
             lastName: $lastName}) RETURN u.id`,
             {
               _id,
-              email,
+              email: email.toLowerCase(),
               firstName,
               lastName,
             },
@@ -70,7 +70,7 @@ router.post(
           return res.status(201).json({
             massage: "Successfully created an account!",
             id: user.records[0]?.get("u.id"),
-            email,
+            email: email.toLowerCase(),
             firstName,
             lastName,
             accountType,
