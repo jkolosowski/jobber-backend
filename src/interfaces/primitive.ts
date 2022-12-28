@@ -15,9 +15,9 @@ export interface LastName {
 }
 
 export interface NewEmail {
-  newEmail?: string
+  newEmail?: string;
 }
 
 export interface NewPassword {
-  newPassword?: string
+  newPassword?: string;
 }

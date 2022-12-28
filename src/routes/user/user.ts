@@ -87,7 +87,9 @@ router.patch(
       (!newEmail || newEmail === "") &&
       (!newPassword || newPassword === "")
     ) {
-      return res.status(400).json({ message: "Missing both new email and new password!" });
+      return res
+        .status(400)
+        .json({ message: "Missing both new email and new password!" });
     }
 
     const newUserEmail =
@@ -135,7 +137,7 @@ router.patch(
 );
 
 /**
- * @PATCH
+ * @DELETE
  * Delete user and all associated nodes and relations.
  *
  * @path /user

@@ -14,9 +14,51 @@ import {
   getOffersFromRecords,
 } from "../../helpers/converter/offerConverter";
 import { getCandidatesFromRecords } from "../../helpers/converter/candidateConverte";
-import { log } from "console";
+import { getProperties } from "../../helpers/neo4j";
 
 const router = Router();
+
+/**
+ * @GET
+ * GET recruiter account information.
+ *
+ * @path /recruiter
+ *
+ * @contentType application/json
+ *
+ *
+ * @resParam message: string Response message.
+ * @resParam recruiter: Recruiter    Response recruiter object.
+ *
+ * {
+ *    id: string             id.
+ *    email: string          User email.
+ *    firstName: string      First name.
+ *    lastName: string       Last name.
+ *    phoneNumber: string    Phone number.
+ *    country: string        Home country.
+ *    company: string        The company for which the recruiter works.
+ *    linkedin: string       The link to Linkedin.
+ *    avatar: string         The link to avatar or Base64.
+ * }
+ *
+ */
+router.get("/", async (req: Request, res: Response) => {
+  const _id = req?.user?._id.toString();
+
+  try {
+    const userData = await neo4jWrapper(
+      `MATCH (r:Recruiter {_id: $_id}) RETURN r`,
+      {
+        _id,
+      },
+    );
+    const recruiter: Recruiter = getProperties(userData, ["r"], ["_id"])[0].r;
+    return res.status(200).json({ message: "Success!", recruiter });
+  } catch (err) {
+    return res.status(500).json({ message: err });
+  }
+});
 
 /**
  * @PATCH
@@ -32,8 +74,13 @@ const router = Router();
  * @reqParam phoneNumber: string    Phone number.
  * @reqParam country: string        Home country.
  * @reqParam company: string        The company for which the recruiter works.
+ * @reqParam linkedin: string       The link to Linkedin.
+ * @reqParam avatar: string         The link to avatar or Base64.
+ *
  *
  * @resParam message: string        Response message.
+ * @resParam recruiter: Recruiter    Response recruiter object.
+ *
  */
 router.patch(
   "/",
@@ -52,23 +99,25 @@ router.patch(
       return res.status(500).json({ message: err });
     }
 
-    const queryProps = Object.keys(recruiterData)
-      .map((key) => `${key}: $${key}`)
-      .join(", ");
+    const queryProps = getQueryProps(recruiterData);
 
+    // TODO: Handling picture (avatar)
     try {
-      await neo4jWrapper(
-        `MATCH (r:Recruiter {_id: $_id}) SET r += {${queryProps}}`,
+      const userData = await neo4jWrapper(
+        `MATCH (r:Recruiter {_id: $_id}) SET r += {${queryProps}} RETURN r`,
         { ...recruiterData, _id },
       );
+
+      const recruiter: Recruiter = getProperties(userData, ["r"], ["_id"])[0].r;
+      return res.status(200).json({ message: "Success!", recruiter });
     } catch (err) {
       await User.findByIdAndUpdate(_id, { $set: { email: previousEmail } });
       return res.status(500).json({ message: err });
     }
-
-    return res.status(200).json({ message: "Success!" });
   },
 );
+
+// ========================================Offers========================================
 
 /**
  * @GET
