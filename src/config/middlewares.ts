@@ -64,16 +64,19 @@ export const validateRequestArrayBody =
   (req: Request, res: Response, next: NextFunction) => {
     const data: Array<T> = req.body;
 
-    data.forEach((el) => {
-      const [vRes, vErrors] = validate<T>(el, validation);
+    const errors: String = data
+      .map((el) => {
+        const [_, vErrors] = validate<T>(el, validation);
+        return vErrors;
+      })
+      .filter((el) => el !== "No errors")
+      .toString();
 
-      if (!vRes) {
-        return res.status(400).json({
-          message: vErrors,
-        });
-      }
-      return el;
-    });
+    if (errors.length != 0) {
+      return res.status(400).json({
+        message: errors,
+      });
+    }
     return next();
   };
 
