@@ -112,3 +112,27 @@ export const offerProps = {
     type: "string",
   },
 };
+
+export const experienceCandidate = {
+  id: {
+    type: "string",
+  },
+  jobTitle: {
+    type: "string",
+  },
+  company: {
+    type: "string",
+  },
+  country: {
+    type: "string",
+  },
+  from: {
+    type: "string",
+  },
+  to: {
+    type: "string",
+  },
+  details: {
+    type: "string",
+  },
+};

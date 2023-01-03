@@ -1,7 +1,13 @@
 import { Router, Request, Response } from "express";
-import { validateCandidateFields } from "../../helpers/validation/validation";
+import {
+  validateCandidateExperienceFields,
+  validateCandidateFields,
+} from "../../helpers/validation/validation";
 import { Candidate } from "../../interfaces/user";
-import { validateRequestBody } from "../../config/middlewares";
+import {
+  validateRequestBody,
+  validateRequestArrayBody,
+} from "../../config/middlewares";
 import { neo4jWrapper } from "../../config/neo4jDriver";
 import User from "../../models/User";
 import { getQueryProps } from "../../helpers/query";
@@ -10,7 +16,8 @@ import {
   getOffer,
   getOffersFromRecords,
 } from "../../helpers/converter/offerConverter";
-import { getProperties } from "../../helpers/neo4j";
+import { getProperties } from "../../helpers/converter/commonConverter";
+import { Experience } from "../../interfaces/experience";
 
 const router = Router();
 
@@ -33,7 +40,6 @@ const router = Router();
  *    lastName: string       Last name.
  *    phoneNumber: string    Phone number.
  *    country: string        Home country.
- *    avatar: string         The link to avatar or Base64.
  *    portfolio: string      Portfolio of a candidate.
  *    bio: string            Short description about candidate.
  *    linkedin: string       The link to Linkedin.
@@ -113,6 +119,142 @@ router.patch(
     }
   },
 );
+
+/**
+ * @GET
+ * Return candidate experiences information.
+ *
+ * @path /candidate/experience
+ *
+ * @contentType application/json
+ *
+ *
+ * @resParam message: string                  Response message.
+ * @resParam experience: Array<Experience>    Response array with experience objects.
+ *
+ */
+router.get("/experience", async (req: Request, res: Response) => {
+  const _id = req.user!._id.toString();
+
+  try {
+    const records = await neo4jWrapper(
+      `MATCH (r:Candidate {_id: $_id})-[:HAS_EXPERIENCE]->(e: Experience) RETURN e`,
+      { _id },
+    );
+    const experiences: Array<Experience> =
+      getProperties(records, ["e"], []).map((exp) => exp.e) || [];
+
+    return res
+      .status(200)
+      .json({ message: "Success!", experience: experiences });
+  } catch (err) {
+    return res.status(500).json({ message: err });
+  }
+});
+
+/**
+ * @PUT
+ * Create/modify candidate experience information.
+ *
+ * @path /candidate/experience
+ *
+ * @contentType application/json
+ *
+ * @reqParam Array<Experience>       Array with experience objects that will be added or updated.
+ *
+ * {
+ *  jobTitle: string        Job title.
+ *  company: string         Company name.
+ *  country: string         Country of work.
+ *  from: string            Start date.
+ *  to: string              End date.
+ *  details: string         Details information.
+   }
+ *
+ *
+ * @resParam message: string                  Response message.
+ * @resParam experience: Array<Experience>    Response array with experience objects that were added or updated.
+ *
+ */
+router.put(
+  "/experience",
+  validateRequestArrayBody<Experience>(validateCandidateExperienceFields),
+  async (req: Request, res: Response) => {
+    const experiences: Array<Experience> = req.body;
+
+    const _id = req.user!._id.toString();
+
+    try {
+      const result: Array<Experience> = await Promise.all(
+        experiences.map(async (exp) => {
+          if (exp.id) {
+            const queryProps = getQueryProps(exp);
+            const records = await neo4jWrapper(
+              `MATCH (r:Candidate {_id: $_id})-[:HAS_EXPERIENCE]->(e: Experience {id:$id}) SET e += {${queryProps}}
+                RETURN e
+              `,
+              { ...exp, _id },
+            );
+            const experience: Experience = getProperties(records, ["e"], [])[0]
+              ?.e;
+            return experience || { id: exp.id, message: "Not found" };
+          } else {
+            const queryProps = getQueryProps(exp);
+            const records = await neo4jWrapper(
+              `MATCH (r:Candidate {_id: $_id})
+                CREATE (e: Experience { ${queryProps}, id:randomUUID()})
+                MERGE (r)-[:HAS_EXPERIENCE]->(e)
+                RETURN e
+              `,
+              { ...exp, _id },
+            );
+            const experience: Experience = getProperties(records, ["e"], [])[0]
+              ?.e;
+            return experience;
+          }
+        }),
+      );
+
+      return res.status(200).json({ message: "Success!", experience: result });
+    } catch (err) {
+      return res.status(500).json({ message: err });
+    }
+  },
+);
+
+/**
+ * @DELETE
+ * Delete candidate experience information.
+ *
+ * @path /candidate/experience/:id/
+ *
+ * @contentType application/json
+ *
+ *
+ * @resParam message: string        Response message.
+ *
+ */
+router.delete("/experience/:id/", async (req: Request, res: Response) => {
+  const _id = req?.user?._id.toString();
+  const id: string = req.params.id;
+
+  try {
+    await neo4jWrapper(
+      `MATCH (c:Candidate {_id: $_id})-[:HAS_EXPERIENCE]->(e: Experience {id: $id})
+      DETACH DELETE e
+      `,
+      { _id, id },
+    );
+
+    return res.status(200).json({
+      message: "Success!",
+    });
+  } catch (err) {
+    return res.status(500).json({ message: err });
+  }
+});
+
+// ========================================Offers========================================
 
 /**
  * @POST
@@ -232,14 +374,13 @@ router.delete("/offer/:id/apply", async (req: Request, res: Response) => {
   const id: string = req.params.id;
 
   try {
-    const records = await neo4jWrapper(
+    await neo4jWrapper(
       `MATCH (c:Candidate {_id: $_id})-[r:APPLIED_FOR]->(o:Offer {id: $id})
       DELETE r
       RETURN o
       `,
       { _id, id },
     );
-    records.records[0].get("o").properties.id;
 
     return res.status(200).json({
       message: "Success!",

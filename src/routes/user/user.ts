@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 
 import { validateRequestBody, authenticate } from "../../config/middlewares";
 import { neo4jWrapper } from "../../config/neo4jDriver";
-import { getProperties } from "../../helpers/neo4j";
+import { getProperties } from "../../helpers/converter/commonConverter";
 import { validateUpdateCredentialsFields } from "../../helpers/validation/validation";
 import { UpdateCredentialsReq } from "../../interfaces/auth";
 import { UserInit } from "../../interfaces/user";
@@ -151,7 +151,10 @@ router.delete("/", async (req: Request, res: Response) => {
 
   await User.findByIdAndDelete(_id);
   await neo4jWrapper(
-    "MATCH (u:User {_id: $_id}) WITH u OPTIONAL MATCH (u)-[:CREATE_OFFER]->(o:Offer) SET o.status = 'closed' DETACH DELETE u",
+    `MATCH (u:User {_id: $_id}) WITH u 
+    OPTIONAL MATCH (u)-[:CREATE_OFFER]->(o:Offer) 
+    OPTIONAL MATCH (u)-[:HAS_EXPERIENCE]->(e:Experience) SET o.status = 'closed' 
+    DETACH DELETE u, e`,
     { _id },
   );
 
