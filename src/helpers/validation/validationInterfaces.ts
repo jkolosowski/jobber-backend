@@ -136,3 +136,27 @@ export const experienceCandidate = {
     type: "string",
   },
 };
+
+export const educationCandidate = {
+  id: {
+    type: "string",
+  },
+  school: {
+    type: "string",
+  },
+  degree: {
+    type: "string",
+  },
+  name: {
+    type: "string",
+  },
+  from: {
+    type: "string",
+  },
+  to: {
+    type: "string",
+  },
+  details: {
+    type: "string",
+  },
+};
