@@ -14,7 +14,7 @@ import {
   getOffersFromRecords,
 } from "../../helpers/converter/offerConverter";
 import { getCandidatesFromRecords } from "../../helpers/converter/candidateConverte";
-import { getProperties } from "../../helpers/neo4j";
+import { getProperties } from "../../helpers/converter/commonConverter";
 
 const router = Router();
 

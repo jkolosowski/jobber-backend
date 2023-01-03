@@ -6,7 +6,7 @@ import { RegisterReq } from "../../interfaces/auth";
 import { neo4jWrapper } from "../../config/neo4jDriver";
 import { validateRegisterFields } from "../../helpers/validation/validation";
 import { validateRequestBody } from "../../config/middlewares";
-import { getProperties } from "../../helpers/neo4j";
+import { getProperties } from "../../helpers/converter/commonConverter";
 
 const router = Router();
 

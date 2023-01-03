@@ -1,8 +1,9 @@
+import { Experience } from "../interfaces/experience";
 import { Offer } from "../interfaces/offer";
 import { Candidate, Recruiter } from "../interfaces/user";
 
 export const getQueryProps = (
-  props: Offer | Recruiter | Candidate | Omit<Candidate, "email">,
+  props: Offer | Recruiter | Candidate | Omit<Candidate, "email"> | Experience,
 ) =>
   Object.keys(props)
     .map((key) => `${key}: $${key}`)
