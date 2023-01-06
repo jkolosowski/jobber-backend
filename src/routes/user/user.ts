@@ -39,7 +39,8 @@ router.get("/", async (req: Request, res: Response) => {
       { _id },
     );
 
-    const userResult: UserInit = getProperties(userData, ["u"], ["_id"])[0].u;
+    const userResult: UserInit = getProperties<any>(userData, ["u"], ["_id"])[0]
+      .u;
 
     const accountType: string = userData.records[0]
       .get("l")
@@ -87,7 +88,9 @@ router.patch(
       (!newEmail || newEmail === "") &&
       (!newPassword || newPassword === "")
     ) {
-      return res.status(400).json({ message: "Missing both new email and new password!" });
+      return res
+        .status(400)
+        .json({ message: "Missing both new email and new password!" });
     }
 
     const newUserEmail =
@@ -116,7 +119,7 @@ router.patch(
         "MATCH (u:User {_id: $_id}) SET u += {email: $email} RETURN u",
         { email: newUserEmail, _id },
       );
-      const userProperties = getProperties(userData, ["u"], ["_id"])[0].u;
+      const userProperties = getProperties<any>(userData, ["u"], ["_id"])[0].u;
 
       return res.status(200).json({
         message: "Success!",
@@ -154,6 +157,40 @@ router.delete("/", async (req: Request, res: Response) => {
   );
 
   return res.status(200).json({ message: "Success!" });
+});
+
+router.get("/list", async (req: Request, res: Response) => {
+  const _id = req.user?._id.toString();
+  const { query } = req.query;
+
+  if (query && typeof query !== "string")
+    return res
+      .status(400)
+      .json({ message: "Query param must be of type string!" });
+
+  const queries = (query as string)
+    .toLowerCase()
+    .trim()
+    .split(" ")
+    .filter((val) => val);
+
+  const records = await neo4jWrapper(
+    `MATCH (u:User) 
+    WHERE u._id <> $userId AND 
+    ANY (q IN $queries WHERE u.firstName CONTAINS q OR u.lastName CONTAINS q OR u.email CONTAINS q) 
+    RETURN u AS user
+    LIMIT 10`,
+    { userId: _id, queries },
+  );
+
+  const topResults = records.records.map((rec) => {
+    return { ...rec.get("user").properties, _id: undefined };
+  });
+
+  return res.status(200).json({
+    message: "Success!",
+    topResults,
+  });
 });
 
 export default router;

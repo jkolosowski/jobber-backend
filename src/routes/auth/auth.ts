@@ -127,7 +127,7 @@ router.post("/login", (req: Request, res: Response) => {
         { _id },
       );
 
-      const userResult = getProperties(userData, ["u"], ["_id"])[0].u;
+      const userResult = getProperties<any>(userData, ["u"], ["_id"])[0].u;
 
       return res
         .status(201)

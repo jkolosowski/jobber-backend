@@ -6,7 +6,10 @@ type Neo4jSession = import("neo4j-driver").Session;
 declare namespace Express {
   export interface User extends UserDocument {
     _id: ObjectId;
-    changePassword: (currentPassword: string, newPassword: string) => Promise<AuthenticatedUser>;
+    changePassword: (
+      currentPassword: string,
+      newPassword: string,
+    ) => Promise<AuthenticatedUser>;
   }
 
   export interface AuthenticatedUser extends UserDocument {
@@ -19,5 +22,25 @@ declare namespace Express {
   export interface Request {
     mongoSession?: MongoSession;
     neo4jSession?: Neo4jSession;
+  }
+}
+
+declare module "http" {
+  interface IncomingMessage {
+    isAuthenticated(): this is AuthenticatedRequest;
+    params: {
+      id?: string;
+      firstUserId?: string;
+      secondUserId?: string;
+    };
+    user:
+      | (UserDocument & {
+          _id: ObjectId;
+          changePassword: (
+            currentPassword: string,
+            newPassword: string,
+          ) => Promise<AuthenticatedUser>;
+        })
+      | undefined;
   }
 }

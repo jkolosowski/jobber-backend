@@ -13,6 +13,8 @@ const errorHandler = (
   switch (error.message) {
     case "apiOfferNotFound":
       return sendResponse(error, 404);
+    case "apiConversationNotFound":
+      return sendResponse(error, 404);
     default:
       return sendResponse(Error("apiUnknownError"), 500);
   }
