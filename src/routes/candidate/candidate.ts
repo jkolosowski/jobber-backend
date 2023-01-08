@@ -1,5 +1,6 @@
 import { Router, Request, Response } from "express";
 import {
+  validateCandidateAdditionalFields,
   validateCandidateEducationFields,
   validateCandidateExperienceFields,
   validateCandidateFields,
@@ -20,6 +21,7 @@ import {
 import { getProperties } from "../../helpers/converter/commonConverter";
 import { Experience } from "../../interfaces/experience";
 import { Education } from "../../interfaces/education";
+import { Additional } from "../../interfaces/additional";
 
 const router = Router();
 
@@ -47,6 +49,10 @@ const router = Router();
  *    linkedin: string       The link to Linkedin.
  *    avatar: string         The link to avatar or Base64.
  * }
+ * @resParam experience: Array<Experience>    Response array with experience objects.
+ * @resParam education: Array<Education>      Response array with education objects.
+ * @resParam additional: Array<Additional>    Response array with additional objects.
+ *
  *
  */
 router.get("/", async (req: Request, res: Response) => {
@@ -59,8 +65,36 @@ router.get("/", async (req: Request, res: Response) => {
         _id,
       },
     );
-    const candidate: Candidate = getProperties(userData, ["c"], ["_id"])[0].c;
-    return res.status(200).json({ message: "Success!", candidate });
+    const candidate: Candidate = getProperties(userData, ["c"], ["_id"])[0]?.c;
+
+    const recordsExperience = await neo4jWrapper(
+      `MATCH (c:Candidate {_id: $_id})-[:HAS_EXPERIENCE]->(e: Experience) RETURN e`,
+      { _id },
+    );
+    const experience: Array<Experience> =
+      getProperties(recordsExperience, ["e"], []).map((exp) => exp.e) || [];
+
+    const recordsEducation = await neo4jWrapper(
+      `MATCH (c:Candidate {_id: $_id})-[:HAS_EDUCATION]->(e: Education) RETURN e`,
+      { _id },
+    );
+    const education: Array<Education> =
+      getProperties(recordsEducation, ["e"], []).map((edu) => edu.e) || [];
+
+    const recordsAdditional = await neo4jWrapper(
+      `MATCH (c:Candidate {_id: $_id})-[:HAS_ADDITIONAL]->(a: Additional) RETURN a`,
+      { _id },
+    );
+    const additional: Array<Additional> =
+      getProperties(recordsAdditional, ["a"], []).map((adi) => adi.a) || [];
+
+    return res.status(200).json({
+      message: "Success!",
+      candidate,
+      experience,
+      education,
+      additional,
+    });
   } catch (err) {
     return res.status(500).json({ message: err });
   }
@@ -85,7 +119,7 @@ router.get("/", async (req: Request, res: Response) => {
  * @reqParam bio: string            Short description about candidate.
  *
  * @resParam message: string        Response message.
- * @resParam candidate: Candidate    Response candidate object.
+ * @resParam candidate: Candidate   Response candidate object.
  *
  */
 router.patch(
@@ -124,7 +158,7 @@ router.patch(
 
 /**
  * @GET
- * Return candidate experiences information.
+ * Return candidate experience information.
  *
  * @path /candidate/experience
  *
@@ -140,15 +174,15 @@ router.get("/experience", async (req: Request, res: Response) => {
 
   try {
     const records = await neo4jWrapper(
-      `MATCH (r:Candidate {_id: $_id})-[:HAS_EXPERIENCE]->(e: Experience) RETURN e`,
+      `MATCH (c:Candidate {_id: $_id})-[:HAS_EXPERIENCE]->(e: Experience) RETURN e`,
       { _id },
     );
-    const experiences: Array<Experience> =
+    const experience: Array<Experience> =
       getProperties(records, ["e"], []).map((exp) => exp.e) || [];
 
     return res
       .status(200)
-      .json({ message: "Success!", experience: experiences });
+      .json({ message: "Success!", experience: experience });
   } catch (err) {
     return res.status(500).json({ message: err });
   }
@@ -156,7 +190,7 @@ router.get("/experience", async (req: Request, res: Response) => {
 
 /**
  * @GET
- * Return candidate educations information.
+ * Return candidate education information.
  *
  * @path /candidate/education
  *
@@ -172,13 +206,45 @@ router.get("/education", async (req: Request, res: Response) => {
 
   try {
     const records = await neo4jWrapper(
-      `MATCH (r:Candidate {_id: $_id})-[:HAS_EDUCATION]->(e: Education) RETURN e`,
+      `MATCH (c:Candidate {_id: $_id})-[:HAS_EDUCATION]->(e: Education) RETURN e`,
       { _id },
     );
-    const educations: Array<Education> =
-      getProperties(records, ["e"], []).map((exp) => exp.e) || [];
+    const education: Array<Education> =
+      getProperties(records, ["e"], []).map((edu) => edu.e) || [];
 
-    return res.status(200).json({ message: "Success!", education: educations });
+    return res.status(200).json({ message: "Success!", education: education });
+  } catch (err) {
+    return res.status(500).json({ message: err });
+  }
+});
+
+/**
+ * @GET
+ * Return candidate additional information.
+ *
+ * @path /candidate/additional
+ *
+ * @contentType application/json
+ *
+ *
+ * @resParam message: string                 Response message.
+ * @resParam education: Array<Additional>    Response array with additional objects.
+ *
+ */
+router.get("/additional", async (req: Request, res: Response) => {
+  const _id = req.user!._id.toString();
+
+  try {
+    const records = await neo4jWrapper(
+      `MATCH (c:Candidate {_id: $_id})-[:HAS_ADDITIONAL]->(a: Additional) RETURN a`,
+      { _id },
+    );
+    const additional: Array<Additional> =
+      getProperties(records, ["a"], []).map((adi) => adi.a) || [];
+
+    return res
+      .status(200)
+      .json({ message: "Success!", additional: additional });
   } catch (err) {
     return res.status(500).json({ message: err });
   }
@@ -195,6 +261,7 @@ router.get("/education", async (req: Request, res: Response) => {
  * @reqParam Array<Experience>       Array with experience objects that will be added or updated.
  *
  * {
+ *  id: string              Identificator (if the object does not have this property, a new object will be created).
  *  jobTitle: string        Job title.
  *  company: string         Company name.
  *  country: string         Country of work.
@@ -222,7 +289,7 @@ router.put(
           if (exp.id) {
             const queryProps = getQueryProps(exp);
             const records = await neo4jWrapper(
-              `MATCH (r:Candidate {_id: $_id})-[:HAS_EXPERIENCE]->(e: Experience {id:$id}) SET e += {${queryProps}}
+              `MATCH (c:Candidate {_id: $_id})-[:HAS_EXPERIENCE]->(e: Experience {id:$id}) SET e += {${queryProps}}
                 RETURN e
               `,
               { ...exp, _id },
@@ -233,9 +300,9 @@ router.put(
           } else {
             const queryProps = getQueryProps(exp);
             const records = await neo4jWrapper(
-              `MATCH (r:Candidate {_id: $_id})
+              `MATCH (c:Candidate {_id: $_id})
                 CREATE (e: Experience { ${queryProps}, id:randomUUID()})
-                MERGE (r)-[:HAS_EXPERIENCE]->(e)
+                MERGE (c)-[:HAS_EXPERIENCE]->(e)
                 RETURN e
               `,
               { ...exp, _id },
@@ -265,6 +332,7 @@ router.put(
  * @reqParam Array<Education>       Array with education objects that will be added or updated.
  *
  * {
+ *  id: string              Identificator (if the object does not have this property, a new object will be created).
  *  school: string          School name.
  *  degree: string          Degree.
  *  name: string            Name.
@@ -292,7 +360,7 @@ router.put(
           if (edu.id) {
             const queryProps = getQueryProps(edu);
             const records = await neo4jWrapper(
-              `MATCH (r:Candidate {_id: $_id})-[:HAS_EDUCATION]->(e: Education {id:$id}) SET e += {${queryProps}}
+              `MATCH (c:Candidate {_id: $_id})-[:HAS_EDUCATION]->(e: Education {id:$id}) SET e += {${queryProps}}
                 RETURN e
               `,
               { ...edu, _id },
@@ -303,9 +371,9 @@ router.put(
           } else {
             const queryProps = getQueryProps(edu);
             const records = await neo4jWrapper(
-              `MATCH (r:Candidate {_id: $_id})
+              `MATCH (c:Candidate {_id: $_id})
                 CREATE (e: Education { ${queryProps}, id:randomUUID()})
-                MERGE (r)-[:HAS_EDUCATION]->(e)
+                MERGE (c)-[:HAS_EDUCATION]->(e)
                 RETURN e
               `,
               { ...edu, _id },
@@ -324,6 +392,72 @@ router.put(
   },
 );
 
+/**
+ * @PUT
+ * Create/modify candidate additional information.
+ *
+ * @path /candidate/additional
+ *
+ * @contentType application/json
+ *
+ * @reqParam Array<Additional>       Array with additional objects that will be added or updated.
+ *
+ * {
+ *  id: string              Identificator (if the object does not have this property, a new object will be created).
+ *  title: string           Title.
+ *  details: string         Details information.
+   }
+ *
+ *
+ * @resParam message: string                  Response message.
+ * @resParam additional: Array<Additional>    Response array with additional objects that were added or updated.
+ *
+ */
+router.put(
+  "/additional",
+  validateRequestArrayBody<Additional>(validateCandidateAdditionalFields),
+  async (req: Request, res: Response) => {
+    const additionals: Array<Additional> = req.body;
+
+    const _id = req.user!._id.toString();
+
+    try {
+      const result: Array<Additional> = await Promise.all(
+        additionals.map(async (adi) => {
+          if (adi.id) {
+            const queryProps = getQueryProps(adi);
+            const records = await neo4jWrapper(
+              `MATCH (c:Candidate {_id: $_id})-[:HAS_ADDITIONAL]->(a: Additional {id:$id}) SET a += {${queryProps}}
+                RETURN a
+              `,
+              { ...adi, _id },
+            );
+            const additional: Additional = getProperties(records, ["a"], [])[0]
+              ?.a;
+            return additional || { id: adi.id, message: "Not found" };
+          } else {
+            const queryProps = getQueryProps(adi);
+            const records = await neo4jWrapper(
+              `MATCH (c:Candidate {_id: $_id})
+                CREATE (a: Additional { ${queryProps}, id:randomUUID()})
+                MERGE (c)-[:HAS_ADDITIONAL]->(a)
+                RETURN a
+              `,
+              { ...adi, _id },
+            );
+            const additional: Additional = getProperties(records, ["a"], [])[0]
+              ?.a;
+            return additional;
+          }
+        }),
+      );
+
+      return res.status(200).json({ message: "Success!", additional: result });
+    } catch (err) {
+      return res.status(500).json({ message: err });
+    }
+  },
+);
 /**
  * @DELETE
  * Delete candidate experience information.
@@ -406,6 +540,47 @@ router.delete("/education/:id/", async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * @DELETE
+ * Delete candidate additional information.
+ *
+ * @path /candidate/additional/:id/
+ *
+ * @contentType application/json
+ *
+ *
+ * @resParam message: string        Response message.
+ *
+ */
+router.delete("/additional/:id/", async (req: Request, res: Response) => {
+  const _id = req?.user?._id.toString();
+  const id: string = req.params.id;
+
+  try {
+    const records = await neo4jWrapper(
+      `MATCH (c:Candidate {_id: $_id})-[:HAS_ADDITIONAL]->(a: Additional {id: $id})
+      WITH a, a AS adi
+      DETACH DELETE a 
+      RETURN adi
+      `,
+      { _id, id },
+    );
+
+    const additional: Education = getProperties(records, ["adi"], [])[0]?.adi;
+
+    if (additional) {
+      return res.status(200).json({
+        message: "Success!",
+      });
+    }
+    return res.status(200).json({
+      message: "Not deleted",
+    });
+  } catch (err) {
+    return res.status(500).json({ message: err });
+  }
+});
+
 // ========================================Offers========================================
 
 /**
@@ -418,7 +593,7 @@ router.delete("/education/:id/", async (req: Request, res: Response) => {
  *
  *
  * @resParam message: string        Response message.
- * @resParam offer: Offer        Response offer object.
+ * @resParam offer: Offer           Response offer object.
  *
  */
 router.post("/offer/:id/apply", async (req: Request, res: Response) => {
