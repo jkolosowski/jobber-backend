@@ -1,4 +1,5 @@
 import Ajv, { ValidateFunction } from "ajv";
+import { Additional } from "../../interfaces/additional";
 import { RegisterReq, UpdateCredentialsReq } from "../../interfaces/auth";
 import { Education } from "../../interfaces/education";
 import { Experience } from "../../interfaces/experience";
@@ -24,6 +25,7 @@ import {
   newUserEmail,
   experienceCandidate,
   educationCandidate,
+  additionalCandidate,
 } from "./validationInterfaces";
 
 const ajv = new Ajv();
@@ -132,6 +134,15 @@ export const validateCandidateEducationFields = ajv.compile<Education>({
     ...educationCandidate,
   },
   required: ["school", "degree", "name", "from", "to"],
+  type: "object",
+  additionalProperties: false,
+});
+
+export const validateCandidateAdditionalFields = ajv.compile<Additional>({
+  properties: {
+    ...additionalCandidate,
+  },
+  required: ["title"],
   type: "object",
   additionalProperties: false,
 });

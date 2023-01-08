@@ -160,3 +160,15 @@ export const educationCandidate = {
     type: "string",
   },
 };
+
+export const additionalCandidate = {
+  id: {
+    type: "string",
+  },
+  title: {
+    type: "string",
+  },
+  details: {
+    type: "string",
+  },
+};

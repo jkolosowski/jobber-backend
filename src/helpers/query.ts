@@ -1,3 +1,4 @@
+import { Additional } from "../interfaces/additional";
 import { Education } from "../interfaces/education";
 import { Experience } from "../interfaces/experience";
 import { Offer } from "../interfaces/offer";
@@ -10,7 +11,8 @@ export const getQueryProps = (
     | Candidate
     | Omit<Candidate, "email">
     | Experience
-    | Education,
+    | Education
+    | Additional,
 ) =>
   Object.keys(props)
     .map((key) => `${key}: $${key}`)
