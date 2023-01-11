@@ -4,8 +4,11 @@ import { validateRequestBody, authenticate } from "../../config/middlewares";
 import { neo4jWrapper } from "../../config/neo4jDriver";
 import { getProperties } from "../../helpers/converter/commonConverter";
 import { validateUpdateCredentialsFields } from "../../helpers/validation/validation";
+import { Additional } from "../../interfaces/additional";
 import { UpdateCredentialsReq } from "../../interfaces/auth";
-import { UserInit } from "../../interfaces/user";
+import { Education } from "../../interfaces/education";
+import { Experience } from "../../interfaces/experience";
+import { Candidate, Recruiter, UserInit } from "../../interfaces/user";
 import User from "../../models/User";
 
 const router = Router();
@@ -161,6 +164,134 @@ router.delete("/", async (req: Request, res: Response) => {
   );
 
   return res.status(200).json({ message: "Success!" });
+});
+
+/**
+ * @GET
+ * GET candidate account information.
+ *
+ * @path user/candidate
+ * @pathParam id: id candidate (optional).
+ *
+ * @contentType application/json
+ *
+ *
+ * @resParam message: string Response message.
+ * @resParam candidate: Candidate    Response candidate object.
+ *
+ *
+ * {
+ *    id: string             id.
+ *    email: string          User email.
+ *    firstName: string      First name.
+ *    lastName: string       Last name.
+ *    phoneNumber: string    Phone number.
+ *    country: string        Home country.
+ *    portfolio: string      Portfolio of a candidate.
+ *    bio: string            Short description about candidate.
+ *    linkedin: string       The link to Linkedin.
+ *    avatar: string         The link to avatar or Base64.
+ * }
+ * @resParam experience: Array<Experience>    Response array with experience objects.
+ * @resParam education: Array<Education>      Response array with education objects.
+ * @resParam additional: Array<Additional>    Response array with additional objects.
+ *
+ *
+ */
+router.get("/candidate", async (req: Request, res: Response) => {
+  const _id = req?.user?._id.toString();
+  const id = req.query.id;
+
+  const idCandidate = id ? id : _id;
+  const idType = id ? "id" : "_id";
+
+  try {
+    const userData = await neo4jWrapper(
+      `MATCH (c:Candidate {${idType}: $idCandidate}) RETURN c`,
+      {
+        idCandidate,
+      },
+    );
+    const candidate: Candidate = getProperties(userData, ["c"], ["_id"])[0]?.c;
+
+    const recordsExperience = await neo4jWrapper(
+      `MATCH (c:Candidate {${idType}: $idCandidate})-[:HAS_EXPERIENCE]->(e: Experience) RETURN e`,
+      { idCandidate },
+    );
+    const experience: Array<Experience> =
+      getProperties(recordsExperience, ["e"], []).map((exp) => exp.e) || [];
+
+    const recordsEducation = await neo4jWrapper(
+      `MATCH (c:Candidate {${idType}: $idCandidate})-[:HAS_EDUCATION]->(e: Education) RETURN e`,
+      { idCandidate },
+    );
+    const education: Array<Education> =
+      getProperties(recordsEducation, ["e"], []).map((edu) => edu.e) || [];
+
+    const recordsAdditional = await neo4jWrapper(
+      `MATCH (c:Candidate {${idType}: $idCandidate})-[:HAS_ADDITIONAL]->(a: Additional) RETURN a`,
+      { idCandidate },
+    );
+    const additional: Array<Additional> =
+      getProperties(recordsAdditional, ["a"], []).map((adi) => adi.a) || [];
+
+    return res.status(200).json({
+      message: "Success!",
+      candidate,
+      experience,
+      education,
+      additional,
+    });
+  } catch (err) {
+    return res.status(500).json({ message: err });
+  }
+});
+
+/**
+ * @GET
+ * GET recruiter account information.
+ *
+ * @path user/recruiter
+ * @pathParam id: id recruiter (optional).
+ *
+ * @contentType application/json
+ *
+ *
+ * @resParam message: string Response message.
+ * @resParam recruiter: Recruiter    Response recruiter object.
+ *
+ * {
+ *    id: string             id.
+ *    email: string          User email.
+ *    firstName: string      First name.
+ *    lastName: string       Last name.
+ *    phoneNumber: string    Phone number.
+ *    country: string        Home country.
+ *    company: string        The company for which the recruiter works.
+ *    linkedin: string       The link to Linkedin.
+ *    avatar: string         The link to avatar or Base64.
+ * }
+ *
+ */
+router.get("/recruiter", async (req: Request, res: Response) => {
+  const _id = req?.user?._id.toString();
+  const id = req.query.id;
+
+  const idCandidate = id ? id : _id;
+  const idType = id ? "id" : "_id";
+
+  try {
+    const userData = await neo4jWrapper(
+      `MATCH (r:Recruiter {${idType}: $idCandidate}) RETURN r`,
+      {
+        idCandidate,
+      },
+    );
+    const recruiter: Recruiter = getProperties(userData, ["r"], ["_id"])[0].r;
+    return res.status(200).json({ message: "Success!", recruiter });
+  } catch (err) {
+    return res.status(500).json({ message: err });
+  }
 });
 
 export default router;
