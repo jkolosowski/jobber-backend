@@ -277,17 +277,17 @@ router.get("/recruiter", async (req: Request, res: Response) => {
   const _id = req?.user?._id.toString();
   const id = req.query.id;
 
-  const idCandidate = id ? id : _id;
+  const idRecruiter = id ? id : _id;
   const idType = id ? "id" : "_id";
 
   try {
     const userData = await neo4jWrapper(
-      `MATCH (r:Recruiter {${idType}: $idCandidate}) RETURN r`,
+      `MATCH (r:Recruiter {${idType}: $idRecruiter}) RETURN r`,
       {
-        idCandidate,
+        idRecruiter,
       },
     );
-    const recruiter: Recruiter = getProperties(userData, ["r"], ["_id"])[0].r;
+    const recruiter: Recruiter = getProperties(userData, ["r"], ["_id"])[0]?.r;
     return res.status(200).json({ message: "Success!", recruiter });
   } catch (err) {
     return res.status(500).json({ message: err });
