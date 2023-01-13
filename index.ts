@@ -10,8 +10,11 @@ import serverConfig from "./src/config/serverConfig";
 import session from "./src/config/session";
 import User, { usernameField } from "./src/models/User";
 import errorHandler from "./src/errors/errorHandler";
+import bodyParser from "body-parser";
 
 const app: Express = express();
+
+app.use(bodyParser.json({ limit: "15MB" }));
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors(corsConfig));
