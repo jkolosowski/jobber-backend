@@ -15,12 +15,15 @@ import {
 } from "../helpers/socket";
 import chatOnConnection from "../socket/chat";
 import userOnConnection from "../socket/user";
+import corsConfig from "./cors";
 
 const io = new Server(server, {
   path: "/socket.io/",
+  cors: { ...corsConfig, methods: ["GET", "POST"] },
 });
 
-io.of(userNamespace)
+export const privateNamespace = io
+  .of(userNamespace)
   .use(socketMiddlewareWrapper(session))
   .use(socketMiddlewareWrapper(passport.initialize()))
   .use(socketMiddlewareWrapper(passport.session()))
@@ -29,7 +32,8 @@ io.of(userNamespace)
   .use(authorizationCheckUser)
   .on("connection", userOnConnection);
 
-  io.of(chatNamespace)
+export const conversationNamespace = io
+  .of(chatNamespace)
   .use(socketMiddlewareWrapper(session))
   .use(socketMiddlewareWrapper(passport.initialize()))
   .use(socketMiddlewareWrapper(passport.session()))

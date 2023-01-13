@@ -20,20 +20,26 @@ export const getOffersFromRecords = (
 const newOfferTime = 60000;
 
 export const getOffer = (record: any, property: string) => {
-  if(!record) throw Error("apiOfferNotFound");
+  if (!record) throw Error("apiOfferNotFound");
 
   const offer: Offer = record.get(property).properties;
+  let recruiterId: string | undefined = undefined;
+
+  try {
+    recruiterId = record.get("recruiterId");
+  } catch (err) {}
 
   const creationDate: string = parseDate(offer.creationDate as DateTime);
 
   const nowDate: number = new Date().getTime();
 
-  const isNew: Boolean =
+  const isNew: boolean =
     nowDate < new Date(creationDate).getTime() + newOfferTime;
 
   return {
     ...offer,
     creationDate: creationDate,
     isNew: isNew,
+    recruiterId,
   } as Offer;
 };

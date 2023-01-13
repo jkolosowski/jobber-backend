@@ -54,7 +54,8 @@ router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const records = await neo4jWrapper(
       `MATCH (o:Offer {id:$id})
-      RETURN o
+      OPTIONAL MATCH (r:Recruiter)-[:CREATE_OFFER]->(o)
+      RETURN o, r.id AS recruiterId
       `,
       { id },
     );

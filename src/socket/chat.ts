@@ -1,4 +1,5 @@
 import { neo4jWrapper } from "../config/neo4jDriver";
+import io, { privateNamespace } from "../config/socket";
 import {
   ChatMessage,
   ChatMessageAck,
@@ -14,27 +15,34 @@ const chatOnConnection = (socket: SocketDefault) => {
 
 const chatOnSendMessage =
   (socket: SocketDefault) =>
-  async (
-    { senderId, receiverId, message }: ChatMessage,
-    callback: (message: any) => void,
-  ) => {
-    if(!callback) return;
+  async ({ message }: ChatMessage, callback: (message: any) => void) => {
+    if (!callback) return;
 
-    if (senderId !== socket.request.params.firstUserId)
-      return callback("Unauthorized");
+    const senderId = socket.request.user?._id.toString();
+    const receiverId = socket.request.params.secondUserId;
 
     try {
       const records = await neo4jWrapper(
-        "MATCH (s:User {id: $senderId}), (r:User {id: $receiverId}) \
+        "MATCH (s:User {_id: $senderId}), (r:User {id: $receiverId}) \
       CREATE (s)-[:SENT]->(m:Message {id: randomUUID(), message: $message, isRead: false, date: datetime()})-[:TO]->(r) \
-      RETURN m",
+      RETURN m, s",
         { senderId, receiverId, message },
       );
 
       const sentMessage = records.records[0].get("m").properties;
+      const senderData = records.records[0].get("s").properties;
 
-      socket.broadcast.emit("sendMessage", sentMessage);
-      callback("Success");
+      socket.broadcast.emit("receiveMessage", {
+        ...sentMessage,
+        received: true,
+      });
+
+      privateNamespace.to(`${receiverId}`).emit("newMessage", {
+        user: { ...senderData, _id: "" },
+        latestMessage: { ...sentMessage, received: true },
+        markAsRead: false,
+      });
+      callback({ ...sentMessage, received: false });
     } catch (err) {
       return callback(err);
     }
@@ -43,7 +51,7 @@ const chatOnSendMessage =
 const chatOnReadMessage =
   (socket: SocketDefault) =>
   async ({ messageId }: ChatMessageAck, callback: (message: any) => void) => {
-    if(!callback) return;
+    if (!callback) return;
 
     const userId = socket.request.user?._id.toString();
 
@@ -60,7 +68,7 @@ const chatOnReadMessage =
 
       const sentMessage = records.records[0];
 
-      if(sentMessage){
+      if (sentMessage) {
         callback("Success");
       }
 
