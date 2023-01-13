@@ -9,6 +9,7 @@ export interface User extends Email, FirstName, LastName {
   phoneNumber: string;
   country: string;
   linkedin?: string;
+  avatar?: string;
 }
 
 export interface CandidateProps {
