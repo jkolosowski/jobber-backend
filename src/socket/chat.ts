@@ -1,5 +1,5 @@
 import { neo4jWrapper } from "../config/neo4jDriver";
-import io, { privateNamespace } from "../config/socket";
+import { privateNamespace } from "../config/socket";
 import {
   ChatMessage,
   ChatMessageAck,
