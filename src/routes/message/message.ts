@@ -45,7 +45,7 @@ router.get(
     try {
       const records = await neo4jWrapper(
         "MATCH (u:User {_id: $userId})<-[:TO]-(m:Message {isRead: false})<-[:SENT]-(r:User) \
-        RETURN SIZE(COLLECT(m)) as unReadCount",
+        RETURN COUNT(DISTINCT(r)) AS unReadCount",
         {
           userId,
         },
