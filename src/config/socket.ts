@@ -8,7 +8,6 @@ import {
   authorizationCheckChat,
   authorizationCheckUser,
   chatNamespace,
-  parseChatIdMiddleware,
   parseUserIdMiddleware,
   socketMiddlewareWrapper,
   userNamespace,
@@ -38,7 +37,6 @@ export const conversationNamespace = io
   .use(socketMiddlewareWrapper(passport.initialize()))
   .use(socketMiddlewareWrapper(passport.session()))
   .use(authenticationCheckSocket)
-  .use(parseChatIdMiddleware)
   .use(authorizationCheckChat)
   .on("connection", chatOnConnection);
 

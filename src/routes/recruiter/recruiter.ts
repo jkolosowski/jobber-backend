@@ -101,7 +101,7 @@ router.get("/offer/:id", async (req: Request, res: Response, next: NextFunction)
       offer,
     });
   } catch (err) {
-    next(err);
+    return next(err);
   }
 });
 

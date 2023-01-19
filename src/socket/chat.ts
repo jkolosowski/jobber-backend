@@ -18,8 +18,10 @@ const chatOnSendMessage =
   async ({ message }: ChatMessage, callback: (message: any) => void) => {
     if (!callback) return;
 
+    const nspName = socket.nsp.name.split("/");
+
     const senderId = socket.request.user?._id.toString();
-    const receiverId = socket.request.params.secondUserId;
+    const receiverId = nspName.slice(-1)[0];
 
     try {
       const records = await neo4jWrapper(

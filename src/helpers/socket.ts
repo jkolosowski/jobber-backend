@@ -28,19 +28,6 @@ export const parseUserIdMiddleware = (
   return next();
 };
 
-export const parseChatIdMiddleware = (
-  socket: SocketDefault,
-  next: (err?: ExtendedError | undefined) => void,
-) => {
-  const nspName = socket.nsp.name.split("/");
-  const firstUserId = nspName.slice(-2)[0];
-  const secondUserId = nspName.slice(-1)[0];
-  console.log("firstUserId", firstUserId);
-  console.log("secondUserId", secondUserId);
-  socket.request.params = { firstUserId, secondUserId };
-  return next();
-};
-
 export const authorizationCheckUser = async (
   socket: SocketDefault,
   next: (err?: ExtendedError | undefined) => void,
@@ -65,8 +52,9 @@ export const authorizationCheckChat = async (
   socket: SocketDefault,
   next: (err?: ExtendedError | undefined) => void,
 ) => {
-  const firstUserId = socket.request.params.firstUserId;
-  const secondUserId = socket.request.params.secondUserId;
+  const nspName = socket.nsp.name.split("/");
+  const firstUserId = nspName.slice(-2)[0];
+  const secondUserId = nspName.slice(-1)[0];
   const userId = socket.request.user?._id.toString();
   try {
     const records = await neo4jWrapper(
