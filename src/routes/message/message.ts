@@ -18,7 +18,7 @@ router.get("/", async (req: Request, res: Response, next: NextFunction) => {
       MATCH (m:Message) \
       WHERE m.date = max \
       WITH r, m, NOT EXISTS((r)-[:SENT]->(m)) AS isOutMsg \
-      RETURN r{.*, _id: ''} AS user, m AS latestMessage, isOutMsg OR m.isRead AS markAsRead \
+      RETURN r{.*, _id: ''} AS user, m{.*, received: NOT isOutMsg} AS latestMessage, isOutMsg OR m.isRead AS markAsRead \
       ORDER BY m.date DESC",
       {
         userId,
