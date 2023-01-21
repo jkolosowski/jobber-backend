@@ -6,7 +6,7 @@ import { RegisterReq } from "../../interfaces/auth";
 import { neo4jWrapper } from "../../config/neo4jDriver";
 import { validateRegisterFields } from "../../helpers/validation/validation";
 import { validateRequestBody } from "../../config/middlewares";
-import { getProperties } from "../../helpers/neo4j";
+import { getProperties } from "../../helpers/converter/commonConverter";
 
 const router = Router();
 
@@ -61,7 +61,7 @@ router.post(
             lastName: $lastName}) RETURN u.id`,
             {
               _id,
-              email,
+              email: email.toLowerCase(),
               firstName,
               lastName,
             },
@@ -70,7 +70,7 @@ router.post(
           return res.status(201).json({
             massage: "Successfully created an account!",
             id: user.records[0]?.get("u.id"),
-            email,
+            email: email.toLowerCase(),
             firstName,
             lastName,
             accountType,
@@ -127,7 +127,7 @@ router.post("/login", (req: Request, res: Response) => {
         { _id },
       );
 
-      const userResult = getProperties<any>(userData, ["u"], ["_id"])[0].u;
+      const userResult = getProperties(userData, ["u"], ["_id"])[0].u;
 
       return res
         .status(201)

@@ -1,3 +1,4 @@
+import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
@@ -14,6 +15,7 @@ import User, { usernameField } from "./src/models/User";
 import errorHandler from "./src/errors/errorHandler";
 import io from "./src/config/socket";
 
+app.use(bodyParser.json({ limit: "15MB" }));
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors(corsConfig));

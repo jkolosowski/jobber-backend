@@ -17,9 +17,13 @@ const authenticationCheck = (
   return next();
 };
 
-export const authenticate = (req: Request, res: Response, next: NextFunction) => {
+export const authenticate = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   req.body.email = req.user!.email;
-  
+
   passport.authenticate("local", (err, user: Express.User) => {
     if (err) {
       return res.status(500).json({ message: err });
@@ -43,8 +47,8 @@ export const accountTypeCheck =
 export const validateRequestBody =
   <T>(validation: AnyValidateFunction<T>) =>
   (req: Request, res: Response, next: NextFunction) => {
-    const candidateData: T = req.body;
-    const [vRes, vErrors] = validate<T>(candidateData, validation);
+    const data: T = req.body;
+    const [vRes, vErrors] = validate<T>(data, validation);
 
     if (!vRes) {
       return res.status(400).json({
@@ -52,6 +56,27 @@ export const validateRequestBody =
       });
     }
 
+    return next();
+  };
+
+export const validateRequestArrayBody =
+  <T>(validation: AnyValidateFunction<T>) =>
+  (req: Request, res: Response, next: NextFunction) => {
+    const data: Array<T> = req.body;
+
+    const errors: String = data
+      .map((el) => {
+        const [_, vErrors] = validate<T>(el, validation);
+        return vErrors;
+      })
+      .filter((el) => el !== "No errors")
+      .toString();
+
+    if (errors.length != 0) {
+      return res.status(400).json({
+        message: errors,
+      });
+    }
     return next();
   };
 
@@ -65,12 +90,16 @@ export const startMongoTransaction = async (
   next();
 };
 
-export const commitMongoTransaction = async (session: ClientSession | undefined) => {
+export const commitMongoTransaction = async (
+  session: ClientSession | undefined,
+) => {
   await session?.commitTransaction();
   await session?.endSession();
 };
 
-export const abortMongoTransaction = async (session: ClientSession | undefined) => {
+export const abortMongoTransaction = async (
+  session: ClientSession | undefined,
+) => {
   await session?.abortTransaction();
   await session?.endSession();
 };

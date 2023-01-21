@@ -112,3 +112,63 @@ export const offerProps = {
     type: "string",
   },
 };
+
+export const experienceCandidate = {
+  id: {
+    type: "string",
+  },
+  jobTitle: {
+    type: "string",
+  },
+  company: {
+    type: "string",
+  },
+  country: {
+    type: "string",
+  },
+  from: {
+    type: "string",
+  },
+  to: {
+    type: "string",
+  },
+  details: {
+    type: "string",
+  },
+};
+
+export const educationCandidate = {
+  id: {
+    type: "string",
+  },
+  school: {
+    type: "string",
+  },
+  degree: {
+    type: "string",
+  },
+  name: {
+    type: "string",
+  },
+  from: {
+    type: "string",
+  },
+  to: {
+    type: "string",
+  },
+  details: {
+    type: "string",
+  },
+};
+
+export const additionalCandidate = {
+  id: {
+    type: "string",
+  },
+  title: {
+    type: "string",
+  },
+  details: {
+    type: "string",
+  },
+};

@@ -2,7 +2,7 @@ import { QueryResult } from "neo4j-driver";
 
 const acceptedTypes = ["string", "number", "boolean", "bigint"];
 
-export const getProperties = <T>(
+export const getProperties = (
   queryResult: QueryResult,
   pickKeys: string[],
   omitProps: string[] = [],
@@ -14,7 +14,7 @@ export const getProperties = <T>(
       const type = typeof recordValue as string;
       let recordProps;
       if (
-        acceptedTypes.find(t => t === type) ||
+        acceptedTypes.find((t) => t === type) ||
         Array.isArray(recordValue) ||
         !recordValue.properties
       ) {
@@ -35,5 +35,5 @@ export const getProperties = <T>(
       result[renameKey ? renameKey : key] = recordProps;
       return { ...result };
     }, {} as Record<string, any>);
-  }) as T;
+  });
 };

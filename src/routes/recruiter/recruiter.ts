@@ -14,6 +14,7 @@ import {
   getOffersFromRecords,
 } from "../../helpers/converter/offerConverter";
 import { getCandidatesFromRecords } from "../../helpers/converter/candidateConverte";
+import { getProperties } from "../../helpers/converter/commonConverter";
 
 const router = Router();
 
@@ -31,8 +32,13 @@ const router = Router();
  * @reqParam phoneNumber: string    Phone number.
  * @reqParam country: string        Home country.
  * @reqParam company: string        The company for which the recruiter works.
+ * @reqParam linkedin: string       The link to Linkedin.
+ * @reqParam avatar: string         The link to avatar or Base64.
+ *
  *
  * @resParam message: string        Response message.
+ * @resParam recruiter: Recruiter    Response recruiter object.
+ *
  */
 router.patch(
   "/",
@@ -51,23 +57,25 @@ router.patch(
       return res.status(500).json({ message: err });
     }
 
-    const queryProps = Object.keys(recruiterData)
-      .map((key) => `${key}: $${key}`)
-      .join(", ");
+    const queryProps = getQueryProps(recruiterData);
 
+    // TODO: Handling picture (avatar)
     try {
-      await neo4jWrapper(
-        `MATCH (r:Recruiter {_id: $_id}) SET r += {${queryProps}}`,
+      const userData = await neo4jWrapper(
+        `MATCH (r:Recruiter {_id: $_id}) SET r += {${queryProps}} RETURN r`,
         { ...recruiterData, _id },
       );
+
+      const recruiter: Recruiter = getProperties(userData, ["r"], ["_id"])[0].r;
+      return res.status(200).json({ message: "Success!", recruiter });
     } catch (err) {
       await User.findByIdAndUpdate(_id, { $set: { email: previousEmail } });
       return res.status(500).json({ message: err });
     }
-
-    return res.status(200).json({ message: "Success!" });
   },
 );
+
+// ========================================Offers========================================
 
 /**
  * @GET
@@ -82,28 +90,31 @@ router.patch(
  * @resParam offer: Offer    Response offer object.
  *
  */
-router.get("/offer/:id", async (req: Request, res: Response, next: NextFunction) => {
-  const offerId: string = req.params.id;
-  const userId = req.user?._id.toString();
+router.get(
+  "/offer/:id",
+  async (req: Request, res: Response, next: NextFunction) => {
+    const offerId: string = req.params.id;
+    const userId = req.user?._id.toString();
 
-  try {
-    const records = await neo4jWrapper(
-      `
+    try {
+      const records = await neo4jWrapper(
+        `
        MATCH (:Recruiter {_id: $userId})-[:CREATE_OFFER]->(o:Offer {id: $offerId})
        RETURN o
       `,
-      { userId, offerId },
-    );
-    const offer: Offer = getOffer(records.records[0], "o");
+        { userId, offerId },
+      );
+      const offer: Offer = getOffer(records.records[0], "o");
 
-    return res.status(200).json({
-      message: "Success!",
-      offer,
-    });
-  } catch (err) {
-    return next(err);
-  }
-});
+      return res.status(200).json({
+        message: "Success!",
+        offer,
+      });
+    } catch (err) {
+      return next(err);
+    }
+  },
+);
 
 /**
  * @POST
@@ -184,17 +195,27 @@ router.patch(
   validateRequestBody<Offer>(validateOfferFields),
   async (req: Request, res: Response) => {
     const id: string = req.params.id;
+    const userId = req?.user?._id.toString();
     const offerData: Offer = req.body;
     const queryProps = getQueryProps(offerData);
 
     try {
       const records = await neo4jWrapper(
-        `MATCH (o:Offer {id:$id}) SET o += {${queryProps}}
+        `MATCH (:Recruiter {_id: $userId})-[:CREATE_OFFER]->(o:Offer {id:$id}) SET o += {${queryProps}}
       RETURN o
       `,
-        { ...offerData, id },
+        { ...offerData, id, userId },
       );
-      const offer: Offer = getOffer(records.records[0], "o");
+
+      const data = records.records[0];
+
+      if (data === undefined) {
+        return res.status(200).json({
+          message: "Offer did not find",
+        });
+      }
+
+      const offer: Offer = getOffer(data, "o");
 
       return res.status(200).json({
         message: "Success!",

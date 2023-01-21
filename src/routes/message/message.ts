@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from "express";
 
 import { neo4jWrapper } from "../../config/neo4jDriver";
-import { getProperties } from "../../helpers/neo4j";
+import { getProperties } from "../../helpers/converter/commonConverter";
 
 const router = Router();
 
@@ -27,7 +27,7 @@ router.get("/", async (req: Request, res: Response, next: NextFunction) => {
 
     return res.status(200).json({
       message: "Success!",
-      conversations: getProperties<any>(records, [
+      conversations: getProperties(records, [
         "user",
         "latestMessage",
         "markAsRead",
@@ -52,7 +52,7 @@ router.get(
         },
       );
 
-      const result = getProperties<any>(records, ["unReadCount"])[0];
+      const result = getProperties(records, ["unReadCount"])[0];
 
       if (result) {
         return res.status(200).json({
@@ -92,7 +92,7 @@ router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
       },
     );
 
-    const result = getProperties<any>(records, ["receiver", "messages"])[0];
+    const result = getProperties(records, ["receiver", "messages"])[0];
 
     if (result) {
       return res.status(200).json({
