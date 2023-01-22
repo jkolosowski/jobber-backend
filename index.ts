@@ -1,18 +1,19 @@
+import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import express, { Express } from "express";
+import express from "express";
 import passport from "passport";
 import passportLocal from "passport-local";
 
+import app from "./src/config/expressApp";
+import server from "./src/config/server";
 import corsConfig from "./src/config/cors";
 import routes from "./src/routes/routes";
 import serverConfig from "./src/config/serverConfig";
 import session from "./src/config/session";
 import User, { usernameField } from "./src/models/User";
 import errorHandler from "./src/errors/errorHandler";
-import bodyParser from "body-parser";
-
-const app: Express = express();
+import io from "./src/config/socket";
 
 app.use(bodyParser.json({ limit: "15MB" }));
 app.use(express.json());
@@ -38,7 +39,9 @@ app.use(routes);
 
 app.use(errorHandler);
 
-app.listen(serverConfig.port, () => {
+io;
+
+server.listen(serverConfig.port, () => {
   console.log(
     `⚡️[server]: Server is running at ${serverConfig.protocol}://localhost:${serverConfig.port}`,
   );
